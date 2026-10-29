@@ -200,6 +200,14 @@ await section('真实文件夹应用 / 还原（含幂等）', async () => {
   const ini2 = decodeIni(await fsp.readFile(r1.iniPath));
   check('幂等：应用两次 ini 内容一致', ini2 === ini1);
 
+  const sizesB = await renderSizes({ hue: 340, text: '测试' }, [256, 128, 64, 48, 32, 24, 16]);
+  const rB = await applyIconToFolder(dir, sizesB);
+  const iniB = decodeIni(await fsp.readFile(rB.iniPath));
+  check('更换新皮肤：ico 文件名随内容变化', path.basename(rB.icoPath) !== path.basename(r1.icoPath));
+  check('更换新皮肤：ini 指向新图标', iniB.includes(`IconResource=${rB.icoPath},0`));
+  check('更换新皮肤：旧图标文件已清理', !fs.existsSync(r1.icoPath));
+  check('无 .diricon 残留', fs.readdirSync(dir).filter((n) => n.startsWith('.diricon')).length === 1);
+
   const st = await readFolderCustomization(dir);
   check('readFolderCustomization 报告已换装', st.customized && st.icoExists && st.hasIconResource);
 
