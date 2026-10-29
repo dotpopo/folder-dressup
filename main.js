@@ -10,9 +10,12 @@ const {
 } = require('./lib/apply');
 
 const ALLOWED_SIZES = new Set([16, 24, 32, 48, 64, 128, 256]);
-const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp']);
+const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif']);
 const PACK_MAX_FILES = 60;
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+// dev 与打包版统一 userData，皮肤包目录才能一致
+app.setPath('userData', path.join(app.getPath('appData'), '文件夹换装'));
 
 let win = null;
 
@@ -163,8 +166,16 @@ ipcMain.handle('pack-image', async (e, payload) => {
   if (st.size > IMAGE_MAX_BYTES) throw userError('图片超过 10MB');
   const buf = await fsp.readFile(resolved);
   const ext = path.extname(resolved).toLowerCase();
-  const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : `image/${ext.slice(1)}`;
-  return `data:${mime};base64,${buf.toString('base64')}`;
+  const MIME = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.bmp': 'image/bmp',
+    '.avif': 'image/avif',
+  };
+  return `data:${MIME[ext] || 'image/png'};base64,${buf.toString('base64')}`;
 });
 
 ipcMain.handle('add-pack-folder', async () => {
