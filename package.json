@@ -44,8 +44,5 @@
     "portable": {
       "artifactName": "FolderDressup-1.0.0-Windows.exe"
     }
-  },
-  "dependencies": {
-    "png-to-ico": "^2.1.8"
   }
 }

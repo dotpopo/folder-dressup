@@ -130,6 +130,28 @@ await section('ico 结构', async () => {
     threw = true;
   }
   check('缺 256 主尺寸时报错', threw);
+
+  // DIB 像素正确性：与 @napi-rs/canvas 的独立解码逐像素比对（32bpp BGRA、自下而上）
+  const { createCanvas, loadImage } = require('@napi-rs/canvas');
+  const icoBuf = await buildIco(sizes);
+  const entries32 = icoEntries(icoBuf).find((e) => e.width === 32);
+  const dibOff = entries32.offset;
+  const src32 = await loadImage(sizes[32]);
+  const cv = createCanvas(32, 32);
+  cv.getContext('2d').drawImage(src32, 0, 0);
+  const expect = cv.getContext('2d').getImageData(0, 0, 32, 32).data;
+  let pixelOk = true;
+  for (const [x, y] of [[0, 0], [16, 16], [31, 31], [5, 25]]) {
+    const eIdx = (y * 32 + x) * 4;
+    const dIdx = dibOff + 40 + ((31 - y) * 32 + x) * 4;
+    const bgr = [icoBuf[dIdx + 2], ico[dIdx + 1], ico[dIdx], ico[dIdx + 3]];
+    const rgba = [expect[eIdx], expect[eIdx + 1], expect[eIdx + 2], expect[eIdx + 3]];
+    if (bgr.some((v, k) => Math.abs(v - rgba[k]) > 1)) {
+      pixelOk = false;
+      console.log(`    像素 (${x},${y}) DIB=${bgr} 期望=${rgba}`);
+    }
+  }
+  check('DIB 像素与源 PNG 一致（4 采样点）', pixelOk);
 });
 
 await section('desktop.ini 纯函数', async () => {
