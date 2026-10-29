@@ -21,7 +21,7 @@
 
 ## 在线预览
 
-官网（含发布片与下载）：https://wispbyte.com —— 部署验证后更新为最终地址
+**在线预览（官网，含发布片与下载）：<https://folder-dressup.wispbyte.app>**
 
 ## 运行
 
