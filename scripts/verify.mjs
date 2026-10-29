@@ -167,6 +167,18 @@ await section('真实文件夹应用 / 还原（含幂等）', async () => {
   const dir = await fsp.mkdtemp(path.join(tmpdir(), 'folder-dressup-verify-'));
   const sizes = await renderSizes({ hue: 160, text: '验证' }, [256, 128, 64, 48, 32, 24, 16]);
 
+  await fsp.writeFile(path.join(dir, 'desktop.ini'), Buffer.from([0x5b, 0x4f, 0x74, 0x68, 0x65, 0x72, 0x5d, 0x0d, 0x0a, 0x4e, 0x6f, 0x74, 0x65, 0x3d, 0xd6, 0xd0, 0x0d, 0x0a]));
+  const beforeBytes = await fsp.readFile(path.join(dir, 'desktop.ini'));
+  let gbkBlocked = false;
+  try {
+    await applyIconToFolder(dir, sizes);
+  } catch (err) {
+    gbkBlocked = String(err.message).includes('旧编码');
+  }
+  check('ANSI/GBK desktop.ini 拒绝合并并给出友好错误', gbkBlocked);
+  check('被拒绝时原 desktop.ini 字节未动', (await fsp.readFile(path.join(dir, 'desktop.ini'))).equals(beforeBytes));
+  await fsp.unlink(path.join(dir, 'desktop.ini'));
+
   const r1 = await applyIconToFolder(dir, sizes);
   check('ico 已写入', fs.existsSync(r1.icoPath));
   const ini1 = decodeIni(await fsp.readFile(r1.iniPath));
@@ -190,6 +202,9 @@ await section('真实文件夹应用 / 还原（含幂等）', async () => {
   check('还原报告有变更', res.changed === true);
   check('ico 已删除', !fs.existsSync(r1.icoPath));
   check('desktop.ini 已删除', !fs.existsSync(r1.iniPath));
+  const fFlagsAfter = await attribFlags(dir);
+  check('还原后文件夹 S 属性已回退', !fFlagsAfter.has('S'), [...fFlagsAfter].join(''));
+  check('无临时文件残留', fs.readdirSync(dir).filter((n) => n.includes('.dressup-tmp')).length === 0);
   const res2 = await restoreFolderIcon(dir);
   check('幂等：再次还原 changed=false', res2.changed === false);
 

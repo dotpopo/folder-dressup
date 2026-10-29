@@ -112,6 +112,26 @@ function undoKey(folder) {
   return `fd:last:${folder}`;
 }
 
+// 撤销数据落库：图片 dataUrl 可能超出 localStorage 配额，降级为只存色相与文字
+function saveUndo(spec) {
+  const full = { hue: spec.hue, text: spec.text, image: spec.image || null };
+  try {
+    localStorage.setItem(undoKey(state.folder), JSON.stringify(full));
+  } catch {
+    try {
+      localStorage.setItem(undoKey(state.folder), JSON.stringify({ hue: full.hue, text: full.text, image: null }));
+    } catch {}
+  }
+}
+
+function showWarnings(warnings, succeedMsg) {
+  if (warnings && warnings.length) {
+    toast(`${succeedMsg}（注意：${warnings[0]}）`, 'error');
+  } else {
+    toast(succeedMsg);
+  }
+}
+
 function syncControls() {
   els.hue.value = String(Math.round(state.spec.hue));
   els.text.value = state.spec.text;
@@ -169,10 +189,10 @@ async function applyToFolder() {
   els.apply.disabled = true;
   try {
     const sizes = await renderIconSizes(state.spec);
-    await api.applyIcon(state.folder, sizes);
-    localStorage.setItem(undoKey(state.folder), JSON.stringify(state.spec));
+    const result = await api.applyIcon(state.folder, sizes);
+    saveUndo(state.spec);
     els.undo.disabled = false;
-    toast(`已应用到「${els.folderLabel.textContent}」，去资源管理器看看吧`);
+    showWarnings(result && result.warnings, `已应用到「${els.folderLabel.textContent}」，去资源管理器看看吧`);
     await refreshFolderState();
   } catch (err) {
     toast(errorMessage(err), 'error');
@@ -204,7 +224,7 @@ async function restoreDefault() {
   els.restore.disabled = true;
   try {
     const r = await api.restoreIcon(state.folder);
-    toast(r.changed ? '已恢复默认图标' : '这个文件夹本来就没有换装');
+    showWarnings(r && r.warnings, r.changed ? '已恢复默认图标' : '这个文件夹本来就没有换装');
     await refreshFolderState();
   } catch (err) {
     els.restore.disabled = false;

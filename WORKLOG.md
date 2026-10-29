@@ -2,6 +2,15 @@
 
 > ub-mode「Keep a Log」：记录每个动作与原因。新条目加在顶部。
 
+## 2026-10-30（审查与加固）
+
+- **Review 轮**（Tw93 规则 14/15）：独立子代理审查全部源码，还做了行为实验（验证隐藏文件覆写必 EPERM、attrib 对斜杠容忍度等）。结论 P0=0，P1=2，P2=6；安全/CSP/IPC 校验/事件绑定均"未发现问题"。
+- **P1 修复**：① 导入图片后撤销数据超 localStorage 配额 → `saveUndo` 降级只存色相+文字，不再"应用成功却报错"；② 还原不回退文件夹 S 属性 → restore 现在做 `attrib -s`（best-effort，失败进 warnings）。
+- **P2 修复**：写入改"同目录临时文件 + rename"（崩溃不再可能销毁旧 desktop.ini）；attrib 失败不再中断且 SHChangeNotify 必达，失败转 warnings 由 UI 展示；ANSI/GBK 旧编码 desktop.ini 检测 U+FFFD 拒绝合并（保护用户原有内容）；restore 的 unlink 带退避重试；拖入图片先 stat 尺寸再读；fitFont 下限 80→44（12 个汉字不再溢出）。
+- **审查修复引入的 bug 又被自家用例抓出**：`unlinkWithRetry` 吞 ENOENT 导致"再次还原 changed=false"失败——改为返回 'deleted' | 'missing'。规则 19 再次应验。
+- **测试**：verify 37/37；e2e-shell 应用变化 ✓ / 还原复原 ✓。重新打包 portable exe。
+
+
 ## 2026-10-30（构建日）
 
 - **交付**：Electron 应用，`npm start` 开发运行；`npm run dist` 打包 portable exe。
