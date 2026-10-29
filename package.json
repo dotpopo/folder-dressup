@@ -1,0 +1,47 @@
+{
+  "name": "folder-dressup",
+  "productName": "文件夹换装",
+  "version": "1.0.0",
+  "description": "给 Windows 文件夹换上喜欢的颜色与造型",
+  "main": "main.js",
+  "author": "folder-dressup",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "icon": "node scripts/make-app-icon.mjs",
+    "verify": "node scripts/verify.mjs",
+    "dist": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^0.1.80",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12",
+    "png-to-ico": "^2.1.8"
+  },
+  "build": {
+    "appId": "app.folderdressup.windows",
+    "productName": "文件夹换装",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**",
+      "renderer/**",
+      "assets/**"
+    ],
+    "win": {
+      "icon": "assets/app.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "FolderDressup-1.0.0-Windows.exe"
+    }
+  }
+}
