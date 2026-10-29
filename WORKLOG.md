@@ -2,6 +2,14 @@
 
 > ub-mode「Keep a Log」：记录每个动作与原因。新条目加在顶部。
 
+## 2026-10-30（用户实测三连修 + 皮肤包中文名）
+
+- **二次换肤不生效**：图标恒为 .diricon.ico，Explorer 同路径缓存不重载 → 改按内容哈希命名 .diricon-<hash>.ico（同内容幂等，旧文件自动清理）。e2e-reskin 外壳级验证：A→B→C 三次换肤外壳提取图标均变化，NFT 封面上得去。
+- **NFT 皮肤换不上**：同根因；另发现 draw-folder 图片模式在 Node 侧用裸 Image 崩溃 → 双环境解码（浏览器 Image / Node @napi-rs/canvas loadImage）。
+- **小窗口按钮遮挡**：左面板子项可被压缩导致 340px 画布溢出压字 → 子项 flex-shrink:0 + 画布随宽缩放，面板滚动。
+- **皮肤包改名**：阿蟹 / 胖企鹅 / Muse（目录即包名）。
+- **教训**：loadPackCats 的空 catch 把 fsp 未定义吞成"没有皮肤包"（上一轮），空 catch 必须至少留日志。
+
 ## 2026-10-30（发布物料与部署）
 
 - **皮肤包数据**：ego-browser 在 OpenSea 虚拟化网格上失败（minimized 页面不挂载）；改用用户提供的 Scrapling 技能（隐身浏览器 + page_action 滚动）成功爬取 axie-ronin / musegod-muses / lilpudgys 各 30 张；seadn CDN 恒回 AVIF，pillow-avif 本地转 PNG。
