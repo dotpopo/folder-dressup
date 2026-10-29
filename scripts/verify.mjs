@@ -78,6 +78,11 @@ async function attribFlags(target) {
 
 /* ---------------- 测试 ---------------- */
 
+await section('main.js 静态自检（回归：fsp 未定义导致皮肤包全灭）', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+  check('fsp 已定义', /const fsp = fs\.promises/.test(src));
+});
+
 await section('draw-folder 双环境加载（回归：浏览器无 module）', async () => {
   const vm = require('node:vm');
   const code = fs.readFileSync(path.join(__dirname, '..', 'lib', 'draw-folder.js'), 'utf8');

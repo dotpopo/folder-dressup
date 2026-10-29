@@ -2,6 +2,8 @@
 
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
+const fsp = fs.promises;
 const {
   applyIconToFolder,
   restoreFolderIcon,
