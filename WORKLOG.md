@@ -2,6 +2,15 @@
 
 > ub-mode「Keep a Log」：记录每个动作与原因。新条目加在顶部。
 
+## 2026-10-30（发布物料与部署）
+
+- **皮肤包数据**：ego-browser 在 OpenSea 虚拟化网格上失败（minimized 页面不挂载）；改用用户提供的 Scrapling 技能（隐身浏览器 + page_action 滚动）成功爬取 axie-ronin / musegod-muses / lilpudgys 各 30 张；seadn CDN 恒回 AVIF，pillow-avif 本地转 PNG。
+- **皮肤包功能**：packs 目录自动发现 + 批量添加文件夹 + 懒加载；userData 统一修复 dev/打包不一致。
+- **发布片**：huashu-motion 五幕连续变形，116 BPM drop；QA 迭代三轮（开场静默→重构时间轴→slam 开场）。
+- **官网**：website/ 静态单页（发布片 + 功能 + 下载），版权与来源声明齐全。
+- **部署**：wispbyte Node 服务器 folder-dressup-site（#566a0140）创建成功，site.zip 上传并解压（zip 上传走 Browse Files + waitForFileChooser；自定义 radio/按钮需完整指针事件序列）。启动与公网地址验证因浏览器被用户接管而暂停。
+- **GitHub**：dotpopo/folder-dressup 已推送；homepage 待部署地址确认后设置。
+
 ## 2026-10-30（审查与加固）
 
 - **Review 轮**（Tw93 规则 14/15）：独立子代理审查全部源码，还做了行为实验（验证隐藏文件覆写必 EPERM、attrib 对斜杠容忍度等）。结论 P0=0，P1=2，P2=6；安全/CSP/IPC 校验/事件绑定均"未发现问题"。
