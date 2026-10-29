@@ -22,6 +22,7 @@ const els = {
   cats: $('cats'),
   grid: $('grid'),
   import: $('import'),
+  addPack: $('add-pack'),
   count: $('count'),
   toast: $('toast'),
   dropOverlay: $('drop-overlay'),
@@ -31,6 +32,7 @@ const state = {
   folder: '',
   spec: { hue: 210, text: '', image: null },
   selectedPreset: '经典',
+  activeCat: 'all',
   dragDepth: 0,
 };
 
@@ -232,7 +234,52 @@ async function restoreDefault() {
   }
 }
 
-/* ---------- 预设图库 ---------- */
+/* ---------- 预设图库（内置分类 + 皮肤包） ---------- */
+
+let packCats = [];
+const packImageCache = new Map();
+
+const BUILTIN_CATS = [...new Set(window.PRESETS.map((p) => p.cat))];
+
+function userPacks() {
+  try {
+    const v = JSON.parse(localStorage.getItem('fd:packs') || '[]');
+    return Array.isArray(v) ? v.filter((p) => p && typeof p.dir === 'string' && typeof p.name === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUserPacks(list) {
+  localStorage.setItem('fd:packs', JSON.stringify(list));
+}
+
+async function loadPackCats() {
+  let disk = [];
+  try {
+    disk = await api.packsList();
+  } catch {}
+  const byDir = new Map();
+  for (const p of [...(Array.isArray(disk) ? disk : []), ...userPacks()]) {
+    if (p && typeof p.dir === 'string' && !byDir.has(p.dir)) byDir.set(p.dir, { name: p.name, dir: p.dir, files: null });
+  }
+  packCats = [...byDir.values()];
+}
+
+async function getPackFiles(pack) {
+  if (pack.files) return pack.files;
+  const files = await api.packFiles(pack.dir);
+  pack.files = files;
+  return files;
+}
+
+async function getPackImage(dir, file) {
+  const key = `${dir}|${file}`;
+  if (packImageCache.has(key)) return packImageCache.get(key);
+  const dataUrl = await api.packImage(dir, file);
+  packImageCache.set(key, dataUrl);
+  return dataUrl;
+}
 
 function markSelected() {
   for (const tile of els.grid.children) {
@@ -248,25 +295,57 @@ function selectPreset(p) {
   schedulePreview();
 }
 
-function buildGallery() {
-  const cats = ['全部', ...new Set(window.PRESETS.map((p) => p.cat))];
-  for (const cat of cats) {
+async function applyPackImage(dir, file) {
+  try {
+    const dataUrl = await getPackImage(dir, file);
+    state.spec = { hue: state.spec.hue, text: '', image: dataUrl };
+    state.selectedPreset = `pack:${dir}|${file}`;
+    markSelected();
+    syncControls();
+    schedulePreview();
+  } catch (err) {
+    toast(errorMessage(err), 'error');
+  }
+}
+
+function catDefs() {
+  return [
+    { key: 'all', label: `全部 · ${window.PRESETS.length}` },
+    ...BUILTIN_CATS.map((c) => ({ key: c, label: c })),
+    ...packCats.map((p) => ({ key: `pack:${p.dir}`, label: p.name })),
+  ];
+}
+
+function renderCats() {
+  els.cats.textContent = '';
+  for (const def of catDefs()) {
     const btn = document.createElement('button');
-    btn.className = 'cat' + (cat === '全部' ? ' active' : '');
-    btn.textContent = cat === '全部' ? `全部 · ${window.PRESETS.length}` : cat;
-    btn.addEventListener('click', () => {
-      for (const c of els.cats.children) c.classList.remove('active');
-      btn.classList.add('active');
-      renderTiles(cat);
-    });
+    btn.className = 'cat' + (state.activeCat === def.key ? ' active' : '');
+    btn.textContent = def.label;
+    btn.title = def.label;
+    btn.addEventListener('click', () => setActiveCat(def.key));
     els.cats.appendChild(btn);
   }
-  renderTiles('全部');
+}
+
+function setActiveCat(key) {
+  state.activeCat = key;
+  for (const c of els.cats.children) c.classList.remove('active');
+  const idx = catDefs().findIndex((d) => d.key === key);
+  if (idx >= 0) els.cats.children[idx].classList.add('active');
+  if (key === 'all') renderTiles('all');
+  else if (key.startsWith('pack:')) renderPackTiles(key.slice(5));
+  else renderTiles(key);
+}
+
+function buildGallery() {
+  renderCats();
+  setActiveCat(state.activeCat || 'all');
 }
 
 function renderTiles(cat) {
   els.grid.textContent = '';
-  const items = cat === '全部' ? window.PRESETS : window.PRESETS.filter((p) => p.cat === cat);
+  const items = cat === 'all' ? window.PRESETS : window.PRESETS.filter((p) => p.cat === cat);
   for (const p of items) {
     const tile = document.createElement('div');
     tile.className = 'tile';
@@ -286,6 +365,42 @@ function renderTiles(cat) {
   }
   els.count.textContent = `${items.length} 张`;
   markSelected();
+}
+
+function renderPackTiles(dir) {
+  els.grid.textContent = '';
+  const pack = packCats.find((p) => p.dir === dir);
+  if (!pack) return;
+  getPackFiles(pack)
+    .then((files) => {
+      if (state.activeCat !== `pack:${dir}`) return;
+      els.count.textContent = `${files.length} 张`;
+      for (const file of files) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.dataset.preset = `pack:${dir}|${file}`;
+        tile.title = file;
+        const img = document.createElement('img');
+        img.className = 'pack-img';
+        img.alt = file;
+        tile.appendChild(img);
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = file.replace(/\.[^.]+$/, '');
+        tile.appendChild(name);
+        tile.addEventListener('click', () => applyPackImage(dir, file));
+        els.grid.appendChild(tile);
+        getPackImage(dir, file)
+          .then((d) => {
+            img.src = d;
+          })
+          .catch(() => {
+            tile.classList.add('broken');
+          });
+      }
+      markSelected();
+    })
+    .catch((err) => toast(errorMessage(err), 'error'));
 }
 
 /* ---------- 拖放 ---------- */
@@ -363,11 +478,26 @@ els.apply.addEventListener('click', applyToFolder);
 els.undo.addEventListener('click', undoLastApply);
 els.restore.addEventListener('click', restoreDefault);
 els.import.addEventListener('click', useImportedImage);
+els.addPack.addEventListener('click', async () => {
+  try {
+    const pack = await api.addPackFolder();
+    if (!pack) return;
+    const list = userPacks().filter((p) => p.dir !== pack.dir);
+    list.push({ name: pack.name, dir: pack.dir });
+    saveUserPacks(list);
+    await loadPackCats();
+    renderCats();
+    setActiveCat(`pack:${pack.dir}`);
+    toast(`已添加皮肤包「${pack.name}」`);
+  } catch (err) {
+    toast(errorMessage(err), 'error');
+  }
+});
 els.folder.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && els.folder.value.trim()) setFolder(els.folder.value.trim());
 });
 
 setupDrag();
-buildGallery();
+loadPackCats().then(buildGallery);
 syncControls();
 schedulePreview();

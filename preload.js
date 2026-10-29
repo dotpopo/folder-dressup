@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('api', {
   applyIcon: (folder, sizes) => ipcRenderer.invoke('apply-icon', { folder, sizes }),
   restoreIcon: (folder) => ipcRenderer.invoke('restore-icon', { folder }),
   getState: (folder) => ipcRenderer.invoke('get-state', { folder }),
+  packsList: () => ipcRenderer.invoke('packs-list'),
+  packFiles: (dir) => ipcRenderer.invoke('pack-files', { dir }),
+  packImage: (dir, file) => ipcRenderer.invoke('pack-image', { dir, file }),
+  addPackFolder: () => ipcRenderer.invoke('add-pack-folder'),
   pathForFile: (file) => {
     try {
       return webUtils.getPathForFile(file);
