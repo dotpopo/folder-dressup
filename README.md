@@ -1,5 +1,9 @@
 # 文件夹换装 · Windows 版
 
+![文件夹换装](film/out/share/film-v5.gif)
+
+<sub>发布片由 <a href="https://github.com/alchaincyf/huashu-motion">huashu-motion</a> 全代码生成</sub>
+
 给 Windows 文件夹换上喜欢的颜色与造型 —— moonvy [「文件夹换装」](https://moonvy.com/apps/dir-hz/) 的 Windows 原生实现。
 
 ![预览](docs/app-shot.png)
@@ -14,6 +18,10 @@
 - **拖拽**：拖入文件夹直接选中，拖入图片直接当封面
 
 > 皮肤包版权注记：爬取的 NFT 图片（如 OpenSea 合集）版权归各创作者，仅限个人本地使用，请勿随应用再分发。
+
+## 在线预览
+
+官网（含发布片与下载）：https://wispbyte.com —— 部署验证后更新为最终地址
 
 ## 运行
 
