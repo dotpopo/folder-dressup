@@ -10,11 +10,14 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createCanvas } = require('@napi-rs/canvas');
 const { drawFolderIcon, normalizeSpec } = require('../lib/draw-folder.js');
 const { buildIco, parsePngSize } = require('../lib/ico.js');
+const { renderSizes } = require('../lib/render-icon.js');
 const {
   applyIconToFolder,
   restoreFolderIcon,
@@ -50,30 +53,6 @@ async function section(title, fn) {
   }
 }
 
-async function renderSizes(spec, sizes) {
-  const out = {};
-  const master = createCanvas(1024, 1024);
-  await drawFolderIcon(master.getContext('2d'), 1024, spec);
-  let prev = master;
-  let prevSize = 1024;
-  for (const size of [...sizes].sort((a, b) => b - a).concat([1024])) {
-    let canvas;
-    if (prevSize === size) {
-      canvas = prev;
-    } else {
-      canvas = createCanvas(size, size);
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'best';
-      ctx.drawImage(prev, 0, 0, prevSize, prevSize, 0, 0, size, size);
-    }
-    if (size !== 1024) out[size] = canvas.toBuffer('image/png');
-    prev = canvas;
-    prevSize = size;
-  }
-  return out;
-}
-
 function icoEntries(buf) {
   const count = buf.readUInt16LE(4);
   const entries = [];
@@ -98,6 +77,15 @@ async function attribFlags(target) {
 }
 
 /* ---------------- 测试 ---------------- */
+
+await section('draw-folder 双环境加载（回归：浏览器无 module）', async () => {
+  const vm = require('node:vm');
+  const code = fs.readFileSync(path.join(__dirname, '..', 'lib', 'draw-folder.js'), 'utf8');
+  const browserCtx = vm.createContext({});
+  vm.runInContext(code, browserCtx);
+  check('无 module 的环境挂载 FolderArt', vm.runInContext('typeof FolderArt === "object" && typeof FolderArt.drawFolderIcon === "function"', browserCtx));
+  check('CJS require 仍然可用', typeof drawFolderIcon === 'function');
+});
 
 await section('绘制冒烟', async () => {
   const canvas = createCanvas(512, 512);
@@ -162,6 +150,17 @@ await section('desktop.ini 纯函数', async () => {
   const cn = 'C:\\中文\\路径\\.diricon.ico';
   const round = decodeIni(encodeIni(upsertIconResource('', cn)));
   check('UTF-16LE 编解码往返（中文路径）', round.includes(cn));
+});
+
+await section('PowerShell 字符串转义（回归：SHGetFileInfo 拒绝双分隔符路径）', async () => {
+  const { psQuote } = require('../lib/apply.js');
+  const raw = "D:\\测试\\it's 文件夹\\.diricon.ico";
+  const { stdout } = await execFileP(
+    'powershell.exe',
+    ['-NoProfile', '-NonInteractive', '-Command', `Write-Output ${psQuote(raw)}`],
+    { encoding: 'utf8' }
+  );
+  check('psQuote 往返保真（反斜杠与引号）', stdout.trim() === raw, JSON.stringify(stdout.trim()));
 });
 
 await section('真实文件夹应用 / 还原（含幂等）', async () => {
