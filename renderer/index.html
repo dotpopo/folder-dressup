@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>文件夹换装</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="drop-overlay" hidden>
+    <div class="drop-card">
+      <div class="drop-emoji">📁</div>
+      <div>松开，选择这个文件夹</div>
+      <div class="drop-sub">拖入图片则作为图标封面</div>
+    </div>
+  </div>
+
+  <header>
+    <canvas id="logo" width="72" height="72" aria-hidden="true"></canvas>
+    <div class="titles">
+      <h1>文件夹换装</h1>
+      <span class="sub">为文件夹换上喜欢的颜色与造型</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel left">
+      <div class="preview-wrap">
+        <canvas id="preview" width="1024" height="1024"></canvas>
+      </div>
+      <div class="folder-name" id="folder-label">尚未选择文件夹</div>
+
+      <div class="path-row">
+        <div class="path-input" id="path-shell">
+          <span class="path-ico">📂</span>
+          <input id="folder" placeholder="选择文件夹，或直接拖进来" spellcheck="false" />
+        </div>
+        <button id="browse" class="btn ghost icon-btn" title="浏览文件夹">＋</button>
+      </div>
+
+      <div class="slider-row">
+        <input type="range" id="hue" class="hue" min="0" max="360" value="210" aria-label="颜色" />
+        <button id="shuffle" class="btn ghost icon-btn" title="随机颜色">🎲</button>
+      </div>
+
+      <div class="text-row">
+        <span class="text-label">文字</span>
+        <input id="text" placeholder="输入 Emoji、数字、英文或中文" maxlength="12" spellcheck="false" />
+        <button id="clear-text" class="btn ghost icon-btn" title="清空文字">✕</button>
+      </div>
+
+      <div class="actions">
+        <button id="undo" class="btn ghost" disabled>撤销修改</button>
+        <button id="restore" class="btn ghost" disabled>恢复默认</button>
+        <button id="apply" class="btn primary" disabled>应用</button>
+      </div>
+
+      <div id="state-badge" class="badge" hidden></div>
+    </section>
+
+    <section class="panel right">
+      <div class="cat-row" id="cats"></div>
+      <div class="grid" id="grid"></div>
+      <div class="gallery-foot">
+        <button id="import" class="btn ghost">导入图片…</button>
+        <span id="count" class="count"></span>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" hidden></div>
+
+  <script src="../lib/draw-folder.js"></script>
+  <script src="presets.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

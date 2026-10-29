@@ -1,0 +1,60 @@
+'use strict';
+
+// 预设库：每个预设 = { name, emoji, hue, cat }，全部由 draw-folder 现场绘制，无外部资源。
+window.PRESETS = [
+  { name: '经典', emoji: '', hue: 210, cat: '经典' },
+  { name: '薄荷', emoji: '', hue: 160, cat: '经典' },
+  { name: '蜜桃', emoji: '', hue: 15, cat: '经典' },
+  { name: '薰衣草', emoji: '', hue: 268, cat: '经典' },
+
+  { name: '相机', emoji: '📷', hue: 205, cat: '物品' },
+  { name: '包裹', emoji: '📦', hue: 28, cat: '物品' },
+  { name: '音乐', emoji: '🎧', hue: 265, cat: '物品' },
+  { name: '书架', emoji: '📚', hue: 12, cat: '物品' },
+  { name: '礼物', emoji: '🎁', hue: 348, cat: '物品' },
+  { name: '公文包', emoji: '💼', hue: 215, cat: '物品' },
+  { name: '钥匙', emoji: '🔑', hue: 45, cat: '物品' },
+  { name: '游戏手柄', emoji: '🎮', hue: 150, cat: '游戏' },
+  { name: '色子', emoji: '🎲', hue: 205, cat: '游戏' },
+  { name: '街机', emoji: '🕹️', hue: 178, cat: '游戏' },
+  { name: '足球', emoji: '⚽', hue: 125, cat: '游戏' },
+  { name: '篮球', emoji: '🏀', hue: 25, cat: '游戏' },
+
+  { name: '汉堡', emoji: '🍔', hue: 38, cat: '美食' },
+  { name: '披萨', emoji: '🍕', hue: 15, cat: '美食' },
+  { name: '橙子', emoji: '🍊', hue: 30, cat: '美食' },
+  { name: '草莓', emoji: '🍓', hue: 350, cat: '美食' },
+  { name: '甜甜圈', emoji: '🍩', hue: 320, cat: '美食' },
+  { name: '蛋糕', emoji: '🍰', hue: 330, cat: '美食' },
+  { name: '咖啡', emoji: '☕', hue: 24, cat: '美食' },
+  { name: '饼干', emoji: '🍪', hue: 32, cat: '美食' },
+  { name: '西瓜', emoji: '🍉', hue: 140, cat: '美食' },
+
+  { name: '小鱼', emoji: '🐠', hue: 190, cat: '海洋' },
+  { name: '鲸鱼', emoji: '🐳', hue: 200, cat: '海洋' },
+  { name: '章鱼', emoji: '🐙', hue: 285, cat: '海洋' },
+  { name: '螃蟹', emoji: '🦀', hue: 8, cat: '海洋' },
+  { name: '海浪', emoji: '🌊', hue: 205, cat: '海洋' },
+  { name: '贝壳', emoji: '🐚', hue: 45, cat: '海洋' },
+
+  { name: '火箭', emoji: '🚀', hue: 232, cat: '宇宙' },
+  { name: '月亮', emoji: '🌙', hue: 222, cat: '宇宙' },
+  { name: '星星', emoji: '⭐', hue: 45, cat: '宇宙' },
+  { name: '土星', emoji: '🪐', hue: 255, cat: '宇宙' },
+  { name: '外星人', emoji: '👽', hue: 130, cat: '宇宙' },
+  { name: '飞碟', emoji: '🛸', hue: 185, cat: '宇宙' },
+
+  { name: '圣诞树', emoji: '🎄', hue: 145, cat: '节日' },
+  { name: '南瓜', emoji: '🎃', hue: 25, cat: '节日' },
+  { name: '烟花', emoji: '🧨', hue: 355, cat: '节日' },
+  { name: '蛋糕日', emoji: '🎂', hue: 335, cat: '节日' },
+  { name: '龙舟', emoji: '🐉', hue: 148, cat: '节日' },
+  { name: '灯笼', emoji: '🏮', hue: 5, cat: '节日' },
+
+  { name: '开心', emoji: '😀', hue: 48, cat: '表情' },
+  { name: '墨镜', emoji: '😎', hue: 205, cat: '表情' },
+  { name: '喜欢', emoji: '🥰', hue: 340, cat: '表情' },
+  { name: '机器人', emoji: '🤖', hue: 200, cat: '表情' },
+  { name: '皇冠', emoji: '👑', hue: 48, cat: '表情' },
+  { name: '紫心', emoji: '💜', hue: 268, cat: '表情' },
+];
