@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN" data-composition-variables='[
+  {"id":"kicker","type":"string","label":"眉题","default":"WINDOWS 原生 · 完全离线"},
+  {"id":"title","type":"string","label":"主标题","default":"文件夹换装"},
+  {"id":"sampleText","type":"string","label":"压印文字","default":"你好"},
+  {"id":"packCaption1","type":"string","label":"皮肤包字幕1","default":"皮肤包 · OpenSea 热销合集"},
+  {"id":"packCaption2","type":"string","label":"皮肤包字幕2","default":"批量添加文件夹 = 新分类"},
+  {"id":"applyTitle","type":"string","label":"应用段大字","default":"一键应用 · 立即可见"},
+  {"id":"ctaLine1","type":"string","label":"片尾行1","default":"双击即用 · 完全离线"},
+  {"id":"ctaLine2","type":"string","label":"片尾行2","default":"想要什么风格？评论区告诉我们"},
+  {"id":"accent","type":"color","label":"强调色","default":"#3478f6"},
+  {"id":"paper","type":"color","label":"底色","default":"#f4f5f7"},
+  {"id":"ink","type":"color","label":"文字色","default":"#17181a"},
+  {"id":"sub","type":"color","label":"次要文字","default":"#7a7f87"},
+  {"id":"endHold","type":"number","label":"结尾停留（秒）","default":1.2,"min":0,"max":6,"step":0.1,"group":"节奏"}
+]'>
+<head>
+<meta charset="utf-8">
+<title>文件夹换装 · 30 秒发布片</title>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/om.js"></script>
+<style id="om-fonts">
+@font-face { font-family: "Noto Sans SC"; src: url("assets/fonts/NotoSansSC-500.woff") format("woff"); font-weight: 500; font-style: normal; }
+@font-face { font-family: "Noto Sans SC"; src: url("assets/fonts/NotoSansSC-900.woff") format("woff"); font-weight: 900; font-style: normal; }
+@font-face { font-family: "Noto Sans SC"; src: url("assets/fonts/NotoSansSC-700.woff") format("woff"); font-weight: 700; font-style: normal; }
+@font-face { font-family: "Noto Sans SC"; src: url("assets/fonts/NotoSansSC-800.woff") format("woff"); font-weight: 800; font-style: normal; }
+</style>
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+  #film {
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    background: var(--paper); color: var(--ink);
+    font-family: "Noto Sans SC", "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    font-weight: 500; --fh: 258;
+  }
+  .glow { position: absolute; inset: 0; background:
+      radial-gradient(1400px 800px at 24% 12%, #ffffffcc, transparent 62%),
+      radial-gradient(1000px 700px at 92% 96%, rgba(52,120,246,.10), transparent 60%); }
+
+  /* ---------- 文件夹对象（按 lib/draw-folder.js 几何重建） ---------- */
+  .folder { position: relative; width: 560px; height: 490px; filter: drop-shadow(0 34px 44px rgba(24,36,66,.20)); }
+  .folder .f-tab { position: absolute; left: 0; top: 0; width: 232px; height: 58px; border-radius: 30px 30px 0 0;
+      background: linear-gradient(180deg, hsl(var(--fh), 62%, 62%), hsl(var(--fh), 60%, 52%)); }
+  .folder .f-back { position: absolute; left: 0; right: 0; top: 29px; bottom: 0; border-radius: 0 34px 34px 34px;
+      background: linear-gradient(180deg, hsl(var(--fh), 62%, 60%), hsl(var(--fh), 58%, 46%)); }
+  .folder .f-paper { position: absolute; left: 24px; right: 24px; top: 62px; height: 116px; border-radius: 20px;
+      background: #f2f4f8; box-shadow: 0 6px 18px rgba(0,0,0,.10); }
+  .folder .f-paper.p2 { top: 94px; background: #ffffff; }
+  .folder .f-front { position: absolute; left: 0; right: 0; top: 166px; bottom: 0; border-radius: 38px; overflow: hidden;
+      background: linear-gradient(180deg, hsl(var(--fh), 70%, 68%) 0%, hsl(var(--fh), 66%, 58%) 55%, hsl(var(--fh), 64%, 50%) 100%);
+      box-shadow: 0 18px 34px rgba(31,41,61,.22); }
+  .folder .f-gloss { position: absolute; left: 0; right: 0; top: 0; height: 46%;
+      background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0)); }
+  .folder .f-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .folder .f-engrave { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 150px; font-weight: 900; color: hsla(var(--fh), 40%, 34%, .44);
+      text-shadow: 0 4px 0 rgba(0,0,0,.14), 0 -4px 0 rgba(255,255,255,.34); letter-spacing: 2px; }
+
+  .kicker { position: absolute; font-size: 30px; letter-spacing: 8px; color: var(--accent); font-weight: 700; }
+  .bigline { position: absolute; font-size: 148px; font-weight: 900; letter-spacing: 2px; line-height: 1.06; }
+  .bigline .mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 12px; }
+  .bigline .ch { display: inline-block; }
+
+  .slider { position: relative; height: 26px; border-radius: 999px;
+      background: linear-gradient(to right, #ff5b4d, #ff9d2e, #ffd12e, #8fd435, #2ecf7f, #2ec2c9, #2e9bff, #4d6bff, #8f5bff, #d35bff, #ff5b9f, #ff5b4d);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.14); }
+  #dress-slider { position: absolute; }
+  .slider .thumb { position: absolute; top: 50%; left: 0; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+      background: #fff; border: 1px solid rgba(0,0,0,.08); box-shadow: 0 4px 14px rgba(0,0,0,.30); }
+
+  .cursor { position: absolute; z-index: 40; width: 44px; height: 44px; filter: drop-shadow(0 3px 6px rgba(0,0,0,.35)); }
+
+  .shot-card { position: absolute; border-radius: 24px; overflow: hidden; background: #fff;
+      box-shadow: 0 40px 90px rgba(20,24,34,.28); }
+  .shot-card img { display: block; width: 100%; height: auto; }
+
+  .panel-card { position: absolute; background: #fff; border-radius: 26px;
+      box-shadow: 0 1px 2px rgba(20,24,34,.04), 0 24px 60px rgba(20,24,34,.12); padding: 40px 44px; }
+  .p-row { display: flex; align-items: center; gap: 18px; margin-bottom: 30px; }
+  .p-path { flex: 1; height: 72px; border-radius: 16px; background: #f4f5f7; display: flex; align-items: center;
+      padding: 0 24px; color: #868b92; font-size: 26px; font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+  .p-label { font-size: 26px; color: var(--sub); font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+  .p-input { flex: 1; height: 72px; border: 1px solid #ececef; border-radius: 16px; display: flex; align-items: center; padding: 0 24px;
+      font-size: 30px; color: var(--ink); font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+  .p-apply { margin-left: auto; height: 72px; padding: 0 44px; border-radius: 16px; background: var(--accent); color: #fff;
+      display: flex; align-items: center; font-size: 28px; font-weight: 700; box-shadow: 0 10px 24px rgba(52,120,246,.35); }
+
+  .tile { position: absolute; width: 296px; border-radius: 22px; background: #fff; padding: 20px;
+      box-shadow: 0 18px 44px rgba(20,24,34,.16); }
+  .tile img { display: block; width: 100%; height: 186px; object-fit: cover; border-radius: 14px; background: #eef0f3; }
+  .tile .tname { margin-top: 12px; font-size: 20px; color: #565b63; text-align: center; font-weight: 700; }
+
+  .caption { position: absolute; font-size: 46px; font-weight: 800; color: var(--ink); }
+  .caption .hl { color: var(--accent); }
+
+  .explorer { position: absolute; background: #fff; border-radius: 18px; overflow: hidden;
+      box-shadow: 0 40px 90px rgba(20,24,34,.30); }
+  .explorer .x-title { height: 62px; background: #f6f7f9; border-bottom: 1px solid #e7e9ee; display: flex; align-items: center;
+      padding: 0 26px; font-size: 22px; color: #565b63; font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+  .explorer .x-body { position: relative; height: 780px; }
+  .mini { position: absolute; width: 280px; height: 260px; opacity: .55; }
+  .mini .m-tab { position: absolute; left: 6px; top: 0; width: 84px; height: 22px; border-radius: 12px 12px 0 0; background: #ffd27a; }
+  .mini .m-back { position: absolute; inset: 11px 0 0 0; border-radius: 0 14px 14px 14px; background: linear-gradient(180deg, #ffd98e, #f5b95c); }
+  .mini .m-front { position: absolute; left: 0; right: 0; top: 80px; bottom: 0; border-radius: 16px;
+      background: linear-gradient(180deg, #ffe3a6, #f2ae4e); }
+  .explorer .star { position: absolute; left: 50%; top: 56%; width: 250px; margin: -125px 0 0 -125px; opacity: 0; }
+  .explorer .check { position: absolute; right: -18px; top: -18px; width: 64px; height: 64px; border-radius: 50%;
+      background: var(--accent); color: #fff; font-size: 36px; font-weight: 900; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 24px rgba(52,120,246,.4); }
+
+  .ini { position: absolute; background: rgba(23,24,26,.92); color: #d6e4ff; border-radius: 14px; padding: 20px 30px;
+      font-family: Consolas, "Courier New", monospace; font-size: 27px; line-height: 1.5; }
+
+  .pill { position: absolute; border-radius: 999px; background: rgba(23,24,26,.85); color: #fff; font-size: 30px;
+      padding: 16px 36px; display: flex; align-items: center; gap: 14px; }
+
+  .cta-logo { position: absolute; }
+  .cta-title { position: absolute; font-size: 132px; font-weight: 900; letter-spacing: 4px; }
+  .cta-line { position: absolute; font-size: 40px; color: var(--sub); }
+  .cta-line b { color: var(--accent); font-weight: 800; }
+
+  section { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<div id="film" data-composition-id="film" data-width="1920" data-height="1080" data-fps="60">
+  <audio id="om-sound" src="assets/sound.wav" data-start="0" data-duration="31" data-track-index="8" data-volume="1"></audio>
+  <div class="glow" data-om-id="glow"></div>
+
+  <!-- 幕一：换装 -->
+  <section id="s-dress">
+    <div class="folder" id="dress-folder" data-om-id="folder-hero" style="left:150px; top:250px;">
+      <div class="f-tab"></div><div class="f-back"></div>
+      <div class="f-paper"></div><div class="f-paper p2"></div>
+      <div class="f-front"><div class="f-gloss"></div><div class="f-engrave" data-om-id="engraved-dress" data-var-text="sampleText"></div></div>
+    </div>
+    <div class="slider" id="dress-slider" data-om-id="hue-slider-dress" style="left:150px; top:800px; width:680px;">
+      <div class="thumb" id="dress-thumb"></div>
+    </div>
+    <div class="kicker" data-om-id="kicker" data-var-text="kicker" style="left:900px; top:300px;"></div>
+    <h1 class="bigline" id="dress-title" data-om-id="main-title" data-om-var="title" style="left:890px; top:368px; width:960px;"></h1>
+    <div class="pill" data-om-id="dress-pill" style="left:900px; top:640px; font-size:32px;">
+      <span style="color:#8fd435;">●</span><span>文件夹不必千篇一律</span>
+    </div>
+  </section>
+
+  <!-- 幕二：应用内操作（真实截图背板 + 代码重建控制板） -->
+  <section id="s-app">
+    <div class="shot-card" id="app-shot" data-om-id="app-screenshot" style="right:-140px; top:150px; width:1500px; transform:rotate(-3deg);">
+      <img src="assets/app-ocean.png" alt="应用截图">
+    </div>
+    <div class="folder" id="app-folder" data-om-id="folder-app" style="left:915px; top:318px; scale:.52;">
+      <div class="f-tab"></div><div class="f-back"></div>
+      <div class="f-paper"></div><div class="f-paper p2"></div>
+      <div class="f-front"><div class="f-gloss"></div><div class="f-engrave" data-om-id="engraved-app" data-var-text="sampleText"></div></div>
+    </div>
+    <div class="panel-card" id="control-panel" data-om-id="control-panel" style="left:120px; top:230px; width:640px;">
+      <div class="p-row"><div class="p-path">📂 选择文件夹，或直接拖进来</div></div>
+      <div class="p-row"><div class="slider" id="app-slider" data-om-id="hue-slider-app" style="flex:1;"><div class="thumb" id="app-thumb"></div></div></div>
+      <div class="p-row"><span class="p-label">文字</span><div class="p-input" id="p-input"></div></div>
+      <div class="p-row" style="margin-bottom:0;"><span style="flex:1;"></span><div class="p-apply">应用</div></div>
+    </div>
+    <svg class="cursor" id="cursor" data-om-id="cursor" viewBox="0 0 24 24"><path d="M5 2l14 12h-7l-1.5 6L5 2z" fill="#fff" stroke="#17181a" stroke-width="1.4"/></svg>
+    <div class="pill" id="app-pill" data-om-id="app-pill" style="left:120px; top:850px;">
+      <span>选定</span><b style="color:#8fd435;">工作文件</b><span style="opacity:.6;">→ 彩虹滑杆调色 → 输入压印文字</span>
+    </div>
+  </section>
+
+  <!-- 幕三：皮肤包（真实爬取图） -->
+  <section id="s-packs">
+    <div class="caption" data-om-id="pack-caption1" data-var-text="packCaption1" style="left:0; right:0; top:96px; text-align:center; font-size:56px;"></div>
+    <div id="pack-grid" data-om-id="pack-grid"></div>
+    <div class="folder" id="pack-cover-folder" data-layout-allow-occlusion data-om-id="pack-cover-folder" style="left:770px; top:290px; scale:0;">
+      <div class="f-tab"></div><div class="f-back"></div>
+      <div class="f-paper"></div><div class="f-paper p2"></div>
+      <div class="f-front"><img class="f-cover" src="assets/packs/lilpudgys-09.png" alt="皮肤封面"><div class="f-gloss"></div></div>
+    </div>
+    <div class="caption" data-om-id="pack-caption2" data-var-text="packCaption2" style="left:0; right:0; top:930px; text-align:center; font-size:52px;"></div>
+  </section>
+
+  <!-- 幕四：一键应用 -->
+  <section id="s-apply">
+    <div class="explorer" id="explorer" data-om-id="explorer" style="left:210px; top:150px; width:1500px;">
+      <div class="x-title">资源管理器 — 工作文件</div>
+      <div class="x-body">
+        <div class="mini" style="left:130px; top:140px;"><div class="m-tab"></div><div class="m-back"></div><div class="m-front"></div></div>
+        <div class="mini" style="left:520px; top:140px;"><div class="m-tab"></div><div class="m-back"></div><div class="m-front"></div></div>
+        <div class="mini" style="left:910px; top:140px;"><div class="m-tab"></div><div class="m-back"></div><div class="m-front"></div></div>
+      </div>
+    </div>
+    <div class="folder" id="apply-folder" data-om-id="folder-apply" style="left:1300px; top:352px; scale:.45; z-index:5;">
+      <div class="f-tab"></div><div class="f-back"></div>
+      <div class="f-paper"></div><div class="f-paper p2"></div>
+      <div class="f-front"><div class="f-gloss"></div><div class="f-engrave" style="font-size:104px;">工作文件</div></div>
+      <div class="check" id="apply-check">✓</div>
+    </div>
+    <div class="ini" id="ini-line" data-om-id="ini-line" style="left:210px; top:830px;">[.ShellClassInfo]<br>IconResource=C:\工作文件\.diricon.ico,0</div>
+    <h1 class="bigline" id="apply-title" data-om-id="apply-title" data-om-var="applyTitle" style="left:210px; top:20px; font-size:96px;"></h1>
+  </section>
+
+  <!-- 幕五：收尾 -->
+  <section id="s-cta">
+    <div class="folder cta-logo" id="cta-folder" data-om-id="cta-folder" style="left:770px; top:130px; scale:.62;">
+      <div class="f-tab"></div><div class="f-back"></div>
+      <div class="f-paper"></div><div class="f-paper p2"></div>
+      <div class="f-front"><div class="f-gloss"></div></div>
+    </div>
+    <div class="cta-title" data-om-id="cta-title" data-var-text="title" style="left:0; right:0; top:600px; text-align:center;">文件夹换装</div>
+    <div class="cta-line" id="cta-line1" data-om-id="cta-line1" data-var-text="ctaLine1" style="left:0; right:0; top:780px; text-align:center;">双击即用 · 完全离线</div>
+    <div class="cta-line" id="cta-line2" data-om-id="cta-line2" data-var-text="ctaLine2" style="left:0; right:0; top:848px; text-align:center;"><b>想要什么风格？评论区告诉我们</b></div>
+  </section>
+</div>
+
+<script>
+  const V = OM.vars();
+  const esc = (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c] || c;
+  const perChar = (el, text) => {
+    el.innerHTML = [...text].map((c) => c === ' ' ? ' ' : `<span class="mask"><span class="ch">${esc(c)}</span></span>`).join('');
+  };
+  perChar(document.getElementById('dress-title'), V.title);
+  perChar(document.getElementById('apply-title'), V.applyTitle);
+  document.getElementById('p-input').textContent = V.sampleText;
+
+  // 皮肤包 3×3 真实素材
+  const PACK_TILES = [
+    ['axie-ronin-01', 'Axie Ronin'], ['musegod-muses-03', 'Musegod Muses'], ['lilpudgys-02', 'Lil Pudgys'],
+    ['axie-ronin-07', 'Axie Ronin'], ['musegod-muses-11', 'Musegod Muses'], ['lilpudgys-09', 'Lil Pudgys'],
+    ['axie-ronin-14', 'Axie Ronin'], ['musegod-muses-19', 'Musegod Muses'], ['lilpudgys-21', 'Lil Pudgys'],
+  ];
+  const grid = document.getElementById('pack-grid');
+  const gridX = 170, gridY = 240, gap = 36;
+  PACK_TILES.forEach(([img, name], i) => {
+    const col = i % 3, row = Math.floor(i / 3);
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.style.left = gridX + col * 540 + 'px';
+    tile.style.top = gridY + row * 272 + 'px';
+    tile.dataset.omId = 'pack-tile-' + (i + 1);
+    tile.innerHTML = `<img src="assets/packs/${img}.png" alt="${name}"><div class="tname">${name}</div>`;
+    grid.appendChild(tile);
+  });
+
+  OM.music({ bpm: 116, drop: 'scene:apply' });
+  const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+  const root = document.getElementById('film');
+  gsap.set(['#s-app', '#s-packs', '#s-apply', '#s-cta'], { autoAlpha: 0 });
+  gsap.set(['#app-shot', '#control-panel', '#app-folder', '#cursor', '#app-pill'], { autoAlpha: 0 });
+  gsap.set(['#pack-grid .tile', '#pack-cover-folder'], { autoAlpha: 0 });
+  gsap.set(['#explorer', '#apply-folder', '#ini-line', '#apply-title'], { autoAlpha: 0 });
+  gsap.set('#apply-check', { scale: 0 });
+  gsap.set(['#cta-folder', '.cta-title', '.cta-line'], { autoAlpha: 0 });
+  gsap.set('#dress-title .ch', { yPercent: 140 });
+  gsap.set('#apply-title .ch', { yPercent: 140 });
+  gsap.set('#dress-thumb', { x: 40 });
+  gsap.set('#app-thumb', { x: 120 });
+  gsap.set('#ini-line', { autoAlpha: 0, y: 24 });
+
+  const B = 60 / 116; // 一拍（116 BPM）
+  const at = (b) => b * B;
+
+  /* ---------- 幕一：换装 ---------- */
+  tl.addLabel('scene:dress', 0);
+  tl.fromTo('#s-dress', { scale: 1 }, { scale: 1.05, duration: 6.0, ease: 'none' }, 0.3)
+    .to('#dress-folder', { rotation: 1.6, duration: 1.9, ease: 'sine.inOut', yoyo: true, repeat: 3 }, 2.4);
+  OM.sfx('whoosh', 0.25);
+  tl.to(root, { '--fh': 618, duration: 1.85, ease: 'none' }, 0.3)
+    .to('#dress-thumb', { x: 620, duration: 1.85, ease: 'none' }, 0.3)
+    .to(root, { '--fh': 565, duration: 0.7, ease: 'elastic.out(1, 0.55)' }, 2.15)
+    .to('#dress-thumb', { x: 585, duration: 0.7, ease: 'elastic.out(1, 0.55)' }, 2.15)
+    .fromTo('.kicker', { autoAlpha: 0, x: -30 }, { autoAlpha: 1, x: 0, duration: .5 }, 0.9)
+    .to('#dress-title .ch', { yPercent: 0, duration: .8, stagger: .05, ease: 'expo.out' }, 1.05);
+  for (let i = 0; i < 5; i++) OM.sfx('thud', at(5) + i * 0.05 + 0.02, { gain: .5 - i * .05 });
+  tl.fromTo('#dress-pill', { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: .6 }, 3.4)
+    .fromTo('#dress-folder .f-engrave', { autoAlpha: 0, scale: 1.25 }, { autoAlpha: 1, scale: 1, duration: .55, ease: 'back.out(2)' }, 4.5);
+  OM.sfx('pop', 4.5);
+  tl.to({}, { duration: 0.01 }, 6.1);
+
+  /* ---------- 幕二：应用内 ---------- */
+  tl.addLabel('scene:app', 6.2);
+  OM.sfx('whoosh', 6.15);
+  tl.fromTo('#s-app', { scale: 1.03 }, { scale: 1, duration: 7.0, ease: 'none' }, 6.4)
+    .to('#app-folder', { rotation: -1.4, duration: 2.2, ease: 'sine.inOut', yoyo: true, repeat: 2 }, 8.0);
+  tl.set('#s-dress', { autoAlpha: 0 }, 6.35)
+    .set('#s-app', { autoAlpha: 1 }, 6.35)
+    .fromTo('#app-shot', { autoAlpha: 0, x: 260, rotation: 3 }, { autoAlpha: 1, x: 0, rotation: -3, duration: .9, ease: 'expo.out' }, 6.4)
+    .fromTo('#app-folder', { autoAlpha: 0, scale: .4, y: 60 }, { autoAlpha: 1, scale: .52, y: 0, duration: .8, ease: 'back.out(1.6)' }, 6.8)
+    .fromTo('#control-panel', { autoAlpha: 0, x: -220 }, { autoAlpha: 1, x: 0, duration: .8, ease: 'expo.out' }, 7.9)
+    .fromTo('#app-pill', { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: .6 }, 8.4)
+    .fromTo('#cursor', { autoAlpha: 0, x: 240, y: 940 }, { autoAlpha: 1, x: 320, y: 560, duration: .6, ease: 'power2.inOut' }, 9.3)
+    .to('#cursor', { x: 300, y: 480, duration: .35, ease: 'power2.inOut' }, 9.9)
+    .to('#app-thumb', { x: 560, duration: 1.5, ease: 'power1.inOut' }, 10.1)
+    .to(root, { '--fh': 700, duration: 1.5, ease: 'power1.inOut' }, 10.1)
+    .to('#cursor', { x: 380, y: 700, duration: .45, ease: 'power2.inOut' }, 11.6)
+    .to('#p-input', { '--w': 1, duration: 0.01 }, 11.9)
+    .add(() => { document.getElementById('p-input').textContent = V.sampleText; }, 11.9)
+    .fromTo('#app-folder .f-engrave', { autoAlpha: 0, scale: 1.2 }, { autoAlpha: 1, scale: 1, duration: .5, ease: 'back.out(2)' }, 12.0);
+  OM.sfx('pop', 12.0);
+  tl.to({}, { duration: 0.01 }, 13.3);
+
+  /* ---------- 幕三：皮肤包爆发 ---------- */
+  tl.addLabel('scene:packs', 13.4);
+  OM.sfx('glitch', 13.35);
+  tl.fromTo('#s-packs', { scale: 1.04 }, { scale: 1, duration: 6.2, ease: 'none' }, 13.5);
+  document.querySelectorAll('#pack-grid .tile').forEach((tile, i) => {
+    tl.to(tile, { y: '-=6', duration: 1.1, ease: 'sine.inOut', yoyo: true, repeat: 2 }, 16.4 + i * 0.06);
+  });
+  tl.set('#s-app', { autoAlpha: 0 }, 13.45)
+    .set('#s-packs', { autoAlpha: 1 }, 13.45)
+    .fromTo('[data-om-id="pack-caption1"]', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: .5 }, 13.7);
+  document.querySelectorAll('#pack-grid .tile').forEach((tile, i) => {
+    const t = 13.9 + i * B / 2;
+    tl.fromTo(tile, { autoAlpha: 0, scale: .55, y: 70, rotation: gsap.utils.random(-8, 8) },
+      { autoAlpha: 1, scale: 1, y: 0, rotation: 0, duration: .5, ease: 'back.out(1.7)' }, t);
+    OM.sfx('pop', t + 0.02, { gain: .4 });
+  });
+  tl.to('#pack-cover-folder', { scale: 1, autoAlpha: 1, duration: .7, ease: 'back.out(1.5)' }, 17.2);
+  OM.sfx('whoosh', 17.15);
+  tl.fromTo('[data-om-id="pack-caption2"]', { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: .6 }, 18.3)
+    .to('#pack-cover-folder', { autoAlpha: 0, duration: .3, ease: 'power2.in' }, 19.45);
+  tl.to({}, { duration: 0.01 }, 19.5);
+
+  /* ---------- 幕四：一键应用（drop 22.4） ---------- */
+  tl.addLabel('scene:apply', 19.6);
+  OM.sfx('thud', 19.55);
+  tl.fromTo('#s-apply', { scale: 1.04 }, { scale: 1, duration: 6.4, ease: 'none' }, 19.7)
+    .to('#explorer', { y: '-=8', duration: 1.6, ease: 'sine.inOut', yoyo: true, repeat: 2 }, 20.8);
+  tl.set('#s-packs', { autoAlpha: 0 }, 19.65)
+    .set('#s-apply', { autoAlpha: 1 }, 19.65)
+    .fromTo('#explorer', { autoAlpha: 0, y: 80, scale: .96 }, { autoAlpha: 1, y: 0, scale: 1, duration: .8, ease: 'expo.out' }, 19.7)
+    .fromTo('#apply-folder', { autoAlpha: 0, scale: .3, y: -260, rotation: -8 },
+      { autoAlpha: 1, scale: .52, y: 0, rotation: 0, duration: .9, ease: 'bounce.out' }, 21.5);
+  OM.sfx('hit', at(43.4) + 0.0, { gain: .9 });
+  tl.to('#apply-check', { scale: 1, duration: .45, ease: 'back.out(2.4)' }, 22.6)
+    .to('#ini-line', { autoAlpha: 1, y: 0, duration: .45 }, 23.2);
+  OM.sfx('pop', 23.3, { gain: .4 });
+  tl.to('#apply-title .ch', { yPercent: 0, duration: .7, stagger: .04, ease: 'expo.out' }, 24.9);
+  for (let i = 0; i < 9; i++) OM.sfx('thud', 24.95 + i * 0.04, { gain: .4 - i * .03 });
+  tl.to({}, { duration: 0.01 }, 26.1);
+
+  /* ---------- 幕五：收尾 ---------- */
+  tl.addLabel('scene:cta', 26.2);
+  OM.sfx('hit', 26.2, { gain: .7 });
+  tl.set('#s-apply', { autoAlpha: 0 }, 26.25)
+    .set('#s-cta', { autoAlpha: 1 }, 26.25)
+    .fromTo('#cta-folder', { autoAlpha: 0, scale: .4, y: 60 }, { autoAlpha: 1, scale: .62, y: 0, duration: .7, ease: 'back.out(1.7)' }, 26.3)
+    .fromTo('.cta-title', { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: .6, ease: 'expo.out' }, 26.7)
+    .fromTo('#cta-line1', { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: .5 }, 27.2)
+    .fromTo('#cta-line2', { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: .5 }, 27.6)
+    .to('#cta-folder', { y: '-=10', duration: 1.4, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 27.0)
+    .to('#cta-folder', { y: '-=10', duration: 1.4, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 27.0)
+    .to({}, { duration: V.endHold });
+
+  window.__timelines['film'] = tl;
+</script>
+</body>
+</html>

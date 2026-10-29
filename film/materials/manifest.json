@@ -1,0 +1,94 @@
+{
+  "sources": [
+    {
+      "kind": "local",
+      "from": "D:\\work\\me\\gym\\folder-dressup",
+      "at": "2026-10-29T19:50:09.208Z",
+      "files": [
+        {
+          "kind": "screen",
+          "file": "materials/local-folder-dressup/app-shot.png",
+          "from": "docs/app-shot.png",
+          "note": "(in the README)"
+        },
+        {
+          "kind": "media",
+          "file": "materials/local-folder-dressup/app.ico",
+          "from": "assets/app.ico",
+          "note": ""
+        }
+      ],
+      "colours": [
+        {
+          "role": "css --bg",
+          "hex": "#f4f5f7"
+        },
+        {
+          "role": "css --panel",
+          "hex": "#ffffff"
+        },
+        {
+          "role": "css --ink",
+          "hex": "#17181a"
+        },
+        {
+          "role": "css --ink-2",
+          "hex": "#7a7f87"
+        },
+        {
+          "role": "css --line",
+          "hex": "#ececef"
+        },
+        {
+          "role": "css --accent",
+          "hex": "#3478f6"
+        },
+        {
+          "role": "css --accent-strong",
+          "hex": "#2a63d0"
+        },
+        {
+          "role": "used 2×",
+          "hex": "#f4f5f7"
+        },
+        {
+          "role": "used 2×",
+          "hex": "#ff5b4d"
+        },
+        {
+          "role": "used 2×",
+          "hex": "#b3b7bf"
+        },
+        {
+          "role": "used 1×",
+          "hex": "#ffffff"
+        },
+        {
+          "role": "used 1×",
+          "hex": "#17181a"
+        },
+        {
+          "role": "used 1×",
+          "hex": "#7a7f87"
+        },
+        {
+          "role": "used 1×",
+          "hex": "#ececef"
+        },
+        {
+          "role": "used 1×",
+          "hex": "#3478f6"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Segoe UI Variable Text",
+          "n": 1
+        }
+      ],
+      "missing": [
+        "no logo or icon file found — look in the app bundle, the site (om grab <url>) or ask the user"
+      ]
+    }
+  ]
+}
