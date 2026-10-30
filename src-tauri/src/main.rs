@@ -371,9 +371,7 @@ fn list_subdirs(parent: String, offset: usize, limit: usize, query: String) -> R
             let customized = imp::state(&path).map(|s| s.customized).unwrap_or(false);
             // 已换装的目录直接回传真实图标文件，前端原样渲染
             let icon = if customized {
-                dir_icons(&path)
-                    .into_iter()
-                    .next()
+                imp::current_icon(&path)
                     .and_then(|p| fs::read(p).ok())
                     .filter(|b| b.len() < 400_000)
                     .map(|b| format!("data:image/x-icon;base64,{}", B64.encode(b)))

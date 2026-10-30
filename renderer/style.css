@@ -817,3 +817,28 @@ input::placeholder {
   background: var(--accent);
   transition: width 0.15s linear;
 }
+
+/* 一键换装：左栏主操作区下方，醒目但区别于「应用」 */
+.batch-cta {
+  width: 100%;
+  height: 46px;
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(52, 120, 246, 0.30);
+  background: linear-gradient(135deg, #f4f8ff, #ecf1ff);
+  color: var(--accent-strong);
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.06s;
+}
+
+.batch-cta:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e9f0ff, #e2ebff);
+  box-shadow: 0 6px 16px rgba(52, 120, 246, 0.16);
+}
+
+.batch-cta:active { transform: scale(0.99); }
+
+.batch-cta:disabled { opacity: 0.55; cursor: default; }

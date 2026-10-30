@@ -387,6 +387,22 @@ pub fn restore(dir: &Path) -> Result<bool, String> {
     Ok(changed)
 }
 
+/// 当前真正生效的图标文件：优先 desktop.ini 引用的那个
+/// （换装会保留上一张，目录里可能同时存在两个 .ico）
+pub fn current_icon(dir: &Path) -> Option<PathBuf> {
+    if let Ok(bytes) = fs::read(dir.join(INI_NAME)) {
+        let content = decode_ini(&bytes);
+        if !content.contains('�') {
+            if let Some(p) = referenced_icon(&content) {
+                if p.is_file() {
+                    return Some(p);
+                }
+            }
+        }
+    }
+    dir_icons(dir).into_iter().next()
+}
+
 pub fn state(dir: &Path) -> Result<StateInfo, String> {
     let ico_exists = !dir_icons(dir).is_empty();
     let has_icon_resource = fs::read(dir.join(INI_NAME))
@@ -508,6 +524,22 @@ mod tests {
         assert!(!dir.join(INI_NAME).exists());
         assert!(!state(&dir).unwrap().customized);
 
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn current_icon_prefers_desktop_ini() {
+        let dir = std::env::temp_dir().join(format!("fd-cur-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        // 模拟换装后目录里同时存在新旧两张图标
+        fs::write(dir.join(".diricon-old.ico"), b"old").unwrap();
+        fs::write(dir.join(".diricon-new.ico"), b"new").unwrap();
+        let ini = upsert_icon_resource("", &dir.join(".diricon-new.ico"));
+        fs::write(dir.join(INI_NAME), encode_ini(&ini)).unwrap();
+
+        let picked = current_icon(&dir).unwrap();
+        assert_eq!(picked.file_name().unwrap(), ".diricon-new.ico");
         let _ = fs::remove_dir_all(&dir);
     }
 

@@ -60,6 +60,10 @@ const t0 = Date.now();
 console.log('batchApply:', await ev('(async()=>{ try { await batchApply(); return "done"; } catch(e){ return "ERR "+e.message; } })()'));
 console.log('耗时:', Date.now() - t0, 'ms');
 
+// 图标一致性：列表返回的 data URL 应等于 desktop.ini 指向的 ico
+const listed = await ev();
+console.log('列表图标长度:', JSON.stringify(listed));
+
 for (let i = 1; i <= 5; i++) {
   const d = path.join(root, `子目录-${i}`);
   const files = fs.readdirSync(d);
