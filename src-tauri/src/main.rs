@@ -645,3 +645,123 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_png(size: u32) -> Vec<u8> {
+        let mut out = Vec::new();
+        {
+            let mut enc = png::Encoder::new(&mut out, size, size);
+            enc.set_color(png::ColorType::Rgba);
+            enc.set_depth(png::BitDepth::Eight);
+            let mut writer = enc.write_header().unwrap();
+            let mut data = vec![0u8; (size * size * 4) as usize];
+            for px in data.chunks_exact_mut(4) {
+                px.copy_from_slice(&[40, 120, 240, 255]);
+            }
+            writer.write_image_data(&data).unwrap();
+        }
+        out
+    }
+
+    fn sizes_map() -> HashMap<u32, Vec<u8>> {
+        ORDER.iter().map(|&s| (s, make_png(s))).collect()
+    }
+
+    #[test]
+    fn ico_has_all_entries() {
+        let ico = build_ico(&sizes_map()).unwrap();
+        assert_eq!(&ico[0..4], &[0, 0, 1, 0]);
+        assert_eq!(u16::from_le_bytes([ico[4], ico[5]]), 7);
+        // 256 条目为 PNG，小尺寸为 DIB（BITMAPINFOHEADER 长度 40）
+        let entries = 7usize;
+        let first_data = u32::from_le_bytes([ico[6 + 12], ico[6 + 13], ico[6 + 14], ico[6 + 15]]) as usize;
+        assert_eq!(&ico[first_data..first_data + 8], b"\x89PNG\r\n\x1a\n");
+        let second = 6 + 16;
+        let off = u32::from_le_bytes([ico[second + 12], ico[second + 13], ico[second + 14], ico[second + 15]]) as usize;
+        assert_eq!(u32::from_le_bytes([ico[off], ico[off + 1], ico[off + 2], ico[off + 3]]), 40);
+        assert!(entries == 7);
+    }
+
+    #[test]
+    fn ini_upsert_is_idempotent_and_removable() {
+        let ico = Path::new(r"C:\x\.diricon-abc.ico");
+        let once = upsert_icon_resource("", ico);
+        assert!(once.contains("[.ShellClassInfo]"));
+        assert_eq!(upsert_icon_resource(&once, ico), once);
+        let (removed, hit) = remove_icon_resource(&once);
+        assert!(hit);
+        assert!(removed.trim().is_empty());
+    }
+
+    #[test]
+    fn ini_keeps_other_content() {
+        let ico = Path::new(r"D:\y\.diricon-def.ico");
+        let base = "[.ShellClassInfo]\r\nConfirmFileOp=0\r\n\r\n[ViewMode]\r\nMode=2";
+        let next = upsert_icon_resource(base, ico);
+        assert!(next.contains("ConfirmFileOp=0"));
+        assert!(next.contains("Mode=2"));
+        assert_eq!(next.matches("IconResource=").count(), 1);
+        let (after, _) = remove_icon_resource(&next);
+        assert!(after.contains("ConfirmFileOp=0"));
+        assert!(!after.contains("IconResource"));
+    }
+
+    #[test]
+    fn utf16_roundtrip_with_chinese_path() {
+        let text = concat!(
+            "[.ShellClassInfo]\r\nIconResource=C:\\中文\\路径\\.diricon-x.ico,0"
+        );
+        assert_eq!(decode_ini(&encode_ini(text)), text);
+    }
+
+    #[test]
+    fn apply_then_restore_on_temp_folder() {
+        let dir = std::env::temp_dir().join(format!("fd-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let folder = dir.display().to_string();
+
+        let sizes: HashMap<String, String> = sizes_map()
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), B64.encode(v)))
+            .collect();
+        let res = apply_icon(folder.clone(), sizes.clone()).unwrap();
+        assert!(Path::new(&res.ico_path).is_file());
+        assert!(dir.join(INI_NAME).is_file());
+        let ico_name = Path::new(&res.ico_path).file_name().unwrap().to_str().unwrap().to_string();
+        assert!(ico_name.starts_with(ICON_PREFIX));
+
+        let st = get_state(folder.clone()).unwrap();
+        assert!(st.customized && st.ico_exists && st.has_icon_resource);
+
+        // 二次应用（内容不同）应换新文件名并清理旧文件
+        let mut sizes2 = sizes.clone();
+        let mut png = make_png(256);
+        png[100] ^= 0xff;
+        sizes2.insert("256".into(), B64.encode(png));
+        let res2 = apply_icon(folder.clone(), sizes2).unwrap();
+        assert_ne!(res.ico_path, res2.ico_path);
+        assert!(!Path::new(&res.ico_path).exists());
+        assert_eq!(dir_icons(&dir).len(), 1);
+
+        let r = restore_icon(folder).unwrap();
+        assert!(r.changed);
+        assert!(dir_icons(&dir).is_empty());
+        assert!(!dir.join(INI_NAME).exists());
+        let st2 = get_state(dir.display().to_string()).unwrap();
+        assert!(!st2.customized);
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn rejects_bad_input() {
+        let mut bad = sizes_map();
+        bad.remove(&256);
+        assert!(build_ico(&bad).is_err());
+        assert!(apply_icon("relative\\path".into(), HashMap::new()).is_err());
+    }
+}

@@ -2,6 +2,14 @@
 
 > ub-mode「Keep a Log」：记录每个动作与原因。新条目加在顶部。
 
+## 2026-10-30（换肤提速 + Tauri 迁移）
+
+- **延迟根因**：① apply 先删旧图标再写新图标，Explorer 读到悬空 IconResource → 回退默认图标；② 通知走 PowerShell 冷启动 + Add-Type 编译，每次 1.2–2.5s。
+- **修法**：顺序改为 写新→改 ini→通知→删旧；通知改为**首次编译一个 C# 小工具**（lib/shell-helper.js，一次性约 0.8s），之后每次是原生进程调用。实测 apply 2400ms → 119ms，已打开窗口 400ms 内变色。
+- **Tauri 迁移**：Rust 后端（src-tauri/src/main.rs，约 700 行）复刻全部能力：ICO 构建（PNG 条目 + DIB）、desktop.ini UTF-16LE、SetFileAttributesW、SHChangeNotify、皮肤包扫描。前端零改动复用（新增 renderer/tauri-shim.js 把 window.api 映射到 invoke）。
+- **体积**：Electron 94MB → 裁剪语言包后 86.6MB；Tauri **3.7MB**（单文件 exe，无需安装）。
+- **验证**：Rust 6/6 测试（含真实文件夹应用/还原）；CDP 驱动真实点击 E2E：皮肤包 3 个、应用写入 ico+ini、SHGetFileInfo 提取到自定义图标。
+
 ## 2026-10-30（用户实测三连修 + 皮肤包中文名）
 
 - **二次换肤不生效**：图标恒为 .diricon.ico，Explorer 同路径缓存不重载 → 改按内容哈希命名 .diricon-<hash>.ico（同内容幂等，旧文件自动清理）。e2e-reskin 外壳级验证：A→B→C 三次换肤外壳提取图标均变化，NFT 封面上得去。
