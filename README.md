@@ -23,14 +23,23 @@
 
 **在线预览（官网，含发布片与下载）：<https://folder-dressup.wispbyte.app>**
 
-## 两个版本
+## 下载
 
-| 版本 | 体积 | 说明 |
+前往 [Releases](https://github.com/dotpopo/folder-dressup/releases/latest) 选择你的平台：
+
+| 平台 | 文件 | 体积 |
 |---|---|---|
-| **轻量版（推荐）** | **3.7 MB** 单文件 | Tauri + Rust，免安装双击即用 |
-| 标准版 | 86.6 MB | Electron，兼容性兜底 |
+| Windows | （NSIS 安装）/  / （免安装） | 1.2–3.5 MB |
+| macOS | （universal，Apple Silicon + Intel） | 由 CI 构建 |
+| Linux |  /  | 由 CI 构建 |
 
-两者的界面、皮肤包目录（`%APPDATA%文件夹换装packs`）完全一致，可共用。
+三个平台共用同一套界面与皮肤包，但「换图标」的机制按系统不同：
+
+- **Windows**：写入  + 隐藏  + 文件属性， 刷新
+- **macOS**： 写入文件夹的自定义图标
+- **Linux**：文件夹内  指向 PNG（GNOME/KDE/Thunar 均识别）
+
+> 另有 Electron 版作为兼容性兜底（86.6 MB），仅在 Tauri 版无法运行时使用。
 
 ## 运行
 
