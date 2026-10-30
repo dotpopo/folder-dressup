@@ -23,7 +23,7 @@ jobs:
           - platform: macos-latest
             args: "--target universal-apple-darwin"
           - platform: ubuntu-22.04
-            args: '--config {"productName":"FolderDressup","bundle":{"targets":["appimage","deb"]}}'
+            args: ""
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +45,12 @@ jobs:
       - name: 单元测试
         working-directory: src-tauri
         run: cargo test --release
+
+      - name: Linux 使用 ASCII 包名（deb/AppImage 命名要求）
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          node -e "const fs=require('fs');const p='src-tauri/tauri.conf.json';const c=JSON.parse(fs.readFileSync(p,'utf8'));c.productName='FolderDressup';c.bundle.targets=['appimage','deb'];fs.writeFileSync(p,JSON.stringify(c,null,2));"
+          grep -m1 productName src-tauri/tauri.conf.json
 
       - name: 构建并上传到 Release
         uses: tauri-apps/tauri-action@v0
