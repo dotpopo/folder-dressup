@@ -35,44 +35,6 @@ fn packs_root() -> PathBuf {
     data_root().join("packs")
 }
 
-/// 首次运行时把安装包内自带的皮肤包释放到用户数据目录
-fn seed_packs(app: &tauri::AppHandle) {
-    use tauri::Manager;
-    let target = packs_root();
-    if target.exists() {
-        let has_any = fs::read_dir(&target)
-            .map(|mut it| it.any(|e| e.map(|e| e.path().is_dir()).unwrap_or(false)))
-            .unwrap_or(false);
-        if has_any {
-            return;
-        }
-    }
-    let Ok(res) = app.path().resolve("packs-seed", tauri::path::BaseDirectory::Resource) else {
-        return;
-    };
-    if !res.is_dir() {
-        return;
-    }
-    let _ = fs::create_dir_all(&target);
-    if let Ok(entries) = fs::read_dir(&res) {
-        for e in entries.flatten() {
-            let src = e.path();
-            if !src.is_dir() {
-                continue;
-            }
-            let dst = target.join(e.file_name());
-            let _ = fs::create_dir_all(&dst);
-            if let Ok(files) = fs::read_dir(&src) {
-                for f in files.flatten() {
-                    if f.path().is_file() {
-                        let _ = fs::copy(f.path(), dst.join(f.file_name()));
-                    }
-                }
-            }
-        }
-    }
-}
-
 #[tauri::command]
 fn force_refresh(folder: String) -> Result<(), String> {
     let dir = assert_folder(&folder)?;
@@ -304,13 +266,38 @@ fn pick_image(app: tauri::AppHandle) -> Result<Option<String>, String> {
     Ok(Some(data_url(&path)?))
 }
 
+/// 把选中的文件夹（内含图片）复制为一个皮肤包，放进数据目录
+#[tauri::command]
+fn import_pack_folder(app: tauri::AppHandle) -> Result<Option<PackInfo>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let picked = app.dialog().file().blocking_pick_folder();
+    let Some(fp) = picked else { return Ok(None) };
+    let src = fp.into_path().map_err(|e| e.to_string())?;
+    let files = scan_pack(&src);
+    if files.is_empty() {
+        return Err("该文件夹里没有可用的图片".into());
+    }
+    let name = src
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("皮肤包")
+        .to_string();
+    let dst = packs_root().join(&name);
+    fs::create_dir_all(&dst).map_err(|e| e.to_string())?;
+    for f in files.iter() {
+        fs::copy(src.join(f), dst.join(f)).map_err(|e| e.to_string())?;
+    }
+    Ok(Some(PackInfo {
+        name,
+        dir: dst.display().to_string(),
+        count: files.len(),
+    }))
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .setup(|app| {
-            seed_packs(app.handle());
-            Ok(())
-        })
+        
         .invoke_handler(tauri::generate_handler![
             apply_icon,
             restore_icon,
@@ -322,7 +309,8 @@ fn main() {
             add_pack_folder,
             pick_folder,
             pick_image,
-            force_refresh
+            force_refresh,
+            import_pack_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

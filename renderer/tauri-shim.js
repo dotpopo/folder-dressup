@@ -32,6 +32,7 @@
     packFiles: (dir) => invoke('pack_files', { dir }),
     packImage: (dir, file) => invoke('pack_image', { dir, file }),
     addPackFolder: () => invoke('add_pack_folder'),
+    importPackFolder: () => invoke('import_pack_folder'),
     pathForFile: (file) => (file && file.path ? file.path : null),
   };
 

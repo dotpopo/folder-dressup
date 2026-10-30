@@ -22,7 +22,14 @@ http.createServer((req, res) => {
     if (!err && st.isDirectory()) file = path.join(file, 'index.html');
     fs.readFile(file, (err2, data) => {
       if (err2) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('404'); }
-      res.writeHead(200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': data.length });
+      const ext = path.extname(file).toLowerCase();
+      const isHtml = ext === '.html' || ext === '';
+      res.writeHead(200, {
+        'Content-Type': MIME[ext] || 'application/octet-stream',
+        'Content-Length': data.length,
+        // HTML 不缓存（改了立刻生效），静态资源长缓存
+        'Cache-Control': isHtml ? 'no-cache, must-revalidate' : 'public, max-age=604800',
+      });
       res.end(data);
     });
   });

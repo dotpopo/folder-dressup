@@ -24,6 +24,7 @@ const els = {
   grid: $('grid'),
   import: $('import'),
   addPack: $('add-pack'),
+  importPack: $('import-pack'),
   count: $('count'),
   toast: $('toast'),
   dropOverlay: $('drop-overlay'),
@@ -495,6 +496,18 @@ els.refresh.addEventListener('click', async () => {
 els.undo.addEventListener('click', undoLastApply);
 els.restore.addEventListener('click', restoreDefault);
 els.import.addEventListener('click', useImportedImage);
+els.importPack.addEventListener('click', async () => {
+  try {
+    const pack = await api.importPackFolder();
+    if (!pack) return;
+    await loadPackCats();
+    renderCats();
+    setActiveCat('pack:' + pack.dir);
+    toast('已导入皮肤包「' + pack.name + '」（' + pack.count + ' 张）');
+  } catch (err) {
+    toast(errorMessage(err), 'error');
+  }
+});
 els.addPack.addEventListener('click', async () => {
   try {
     const pack = await api.addPackFolder();
