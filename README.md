@@ -29,9 +29,12 @@
 
 | 平台 | 文件 | 体积 |
 |---|---|---|
-| Windows | `FolderDressup_*_x64-setup.exe`（NSIS 安装）/ `.msi` / `_portable.exe`（免安装） | 1.2–3.5 MB |
-| macOS | `*.dmg`（universal，Apple Silicon + Intel） | 由 CI 构建 |
-| Linux | `*.AppImage` / `*.deb` | 由 CI 构建 |
+| Windows | `FolderDressup-windows-x64-setup.exe`（NSIS 安装）/ `FolderDressup-windows-x64.msi` | 3.2 MB / 3.7 MB |
+| macOS | `FolderDressup-macos-universal.dmg`（universal，Apple Silicon + Intel） | 5.3 MB |
+| Linux | `FolderDressup-linux-x86_64.AppImage` / `FolderDressup-linux-amd64.deb` | 78.4 MB / 3.5 MB |
+| 皮肤包 | `FolderDressup-packs.zip`（三套共 90 张） | 2.0 MB |
+
+> 下载地址统一使用 `releases/latest/download/<文件名>` 永久直链，始终指向最新正式版。
 
 三个平台共用同一套界面与皮肤包，但「换图标」的机制按系统不同：
 
