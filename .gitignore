@@ -3,3 +3,5 @@ dist/
 .test-target/
 *.log
 website/site.zip
+src-tauri/target/
+.test-live/
