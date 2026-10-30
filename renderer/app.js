@@ -202,7 +202,7 @@ async function applyToFolder() {
     const result = await api.applyIcon(state.folder, sizes);
     saveUndo(state.spec);
     els.undo.disabled = false;
-    showWarnings(result && result.warnings, `已应用到「${els.folderLabel.textContent}」，去资源管理器看看吧`);
+    showWarnings(result && result.warnings, `已应用到「${els.folderLabel.textContent}」；图标没变就点「刷新图标」`);
     await refreshFolderState();
   } catch (err) {
     toast(errorMessage(err), 'error');
@@ -491,11 +491,20 @@ els.clearText.addEventListener('click', () => {
 els.apply.addEventListener('click', applyToFolder);
 els.refresh.addEventListener('click', async () => {
   if (!state.folder) return;
+  els.refresh.disabled = true;
+  toast('正在重启资源管理器…');
   try {
-    await api.forceRefresh(state.folder);
-    toast('已请求资源管理器刷新');
+    if (api.restartExplorer) {
+      await api.restartExplorer();
+      toast('资源管理器已重启，图标已更新');
+    } else {
+      await api.forceRefresh(state.folder);
+      toast('已请求资源管理器刷新');
+    }
   } catch (err) {
     toast(errorMessage(err), 'error');
+  } finally {
+    els.refresh.disabled = false;
   }
 });
 els.undo.addEventListener('click', undoLastApply);

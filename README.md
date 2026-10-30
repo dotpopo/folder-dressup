@@ -125,3 +125,15 @@ UPDATEIMAGE / 重建 desktop.ini / ASSOCCHANGED）都无法稳定即时重绘—
 
 抠图后的三套皮肤包只有 **2.2 MB**，已重新内嵌进安装包：安装包 3.2 MB，首次启动自动释放到数据目录，
 无需再单独下载。（Release 里仍保留 `FolderDressup-packs.zip` 作为备份获取方式。）
+
+## 关于「应用后图标没立刻变」（v1.0.11）
+
+写入本身 5–15ms 完成，`SHGetFileInfo` 立刻能读到新图标；但 **Explorer 的视图缓存**
+不会因为我们发出的任何通知立刻重绘——实测 7 种方式（UPDATEITEM / UPDATEDIR / 属性翻转 /
+UPDATEIMAGE / 重建 desktop.ini / ASSOCCHANGED / 向 DefView 发 FCIDM_SHVIEW_REFRESH）
+都无法稳定做到。这是系统行为。
+
+因此：
+
+- 成功提示改为「已应用；图标没变就点「刷新图标」」；
+- **「刷新图标」= 重启资源管理器**，这是唯一 100% 生效的手段（已打开的资源管理器窗口会自动重新打开）。

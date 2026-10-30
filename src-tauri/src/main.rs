@@ -426,6 +426,33 @@ fn open_in_explorer(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// 重启资源管理器：唯一能 100% 让图标缓存失效的办法（窗口会重新打开）
+#[tauri::command]
+fn restart_explorer() -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let _ = std::process::Command::new("taskkill")
+            .args(["/f", "/im", "explorer.exe"])
+            .creation_flags(0x08000000)
+            .status();
+        std::thread::sleep(std::time::Duration::from_millis(600));
+        std::process::Command::new("explorer.exe")
+            .creation_flags(0x08000000)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("killall").arg("Finder").status();
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let _ = std::process::Command::new("nautilus").arg("-q").status();
+    }
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -449,7 +476,8 @@ fn main() {
             import_pack_folder,
             list_subdirs,
             parent_dir,
-            open_in_explorer
+            open_in_explorer,
+            restart_explorer
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

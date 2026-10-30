@@ -31,6 +31,7 @@
     listSubdirs: (parent, offset, limit, query) => invoke('list_subdirs', { parent, offset, limit, query }),
     parentDir: (path) => invoke('parent_dir', { path }),
     openInExplorer: (path) => invoke('open_in_explorer', { path }),
+    restartExplorer: () => invoke('restart_explorer'),
     packsList: () => invoke('packs_list'),
     packFiles: (dir) => invoke('pack_files', { dir }),
     packImage: (dir, file) => invoke('pack_image', { dir, file }),
