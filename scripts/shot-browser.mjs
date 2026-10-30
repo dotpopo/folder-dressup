@@ -36,8 +36,8 @@ const ev = (expr) => new Promise((res) => {
   ws.send(JSON.stringify({ id: i, method: 'Runtime.evaluate', params: { expression: expr, awaitPromise: true, returnByValue: true } }));
 });
 
-await ev('switchTab("folders")');
-await ev(`openFolders(${JSON.stringify(root)})`);
+await ev('setFolder(' + JSON.stringify(root) + ', { openBrowser: true })');
+
 await sleep(1600);
 ws.close();
 

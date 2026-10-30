@@ -141,13 +141,20 @@ function syncControls() {
   els.text.value = state.spec.text;
 }
 
-function setFolder(p) {
+function setFolder(p, opts) {
   state.folder = p;
   els.folder.value = p;
   els.folderLabel.textContent = p.split(/[\\/]/).filter(Boolean).pop() || p;
   els.apply.disabled = false;
   els.refresh.disabled = false;
   refreshFolderState();
+  if (opts && opts.openBrowser) {
+    switchTab('folders');
+    openFolders(p).then(() => {
+      if (fb.total > 0) toast('共 ' + fb.total + ' 个子文件夹，点一下即可换肤，双击进入');
+      else toast('这个目录下没有子文件夹，可直接点「应用」');
+    });
+  }
 }
 
 async function refreshFolderState() {
@@ -169,7 +176,7 @@ async function refreshFolderState() {
 
 async function browseFolder() {
   const p = await api.pickFolder();
-  if (p) setFolder(p);
+  if (p) setFolder(p, { openBrowser: true });
 }
 
 async function useImportedImage() {
@@ -433,7 +440,7 @@ function setupDrag() {
     try {
       const res = await api.ingestDrop(p);
       if (res.type === 'folder') {
-        setFolder(res.path);
+        setFolder(res.path, { openBrowser: true });
         toast('已选择文件夹：' + res.path.split(/[\\/]/).pop());
       } else {
         state.spec = { hue: state.spec.hue, text: '', image: res.dataUrl };
@@ -524,7 +531,7 @@ els.addPack.addEventListener('click', async () => {
   }
 });
 els.folder.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && els.folder.value.trim()) setFolder(els.folder.value.trim());
+  if (e.key === 'Enter' && els.folder.value.trim()) setFolder(els.folder.value.trim(), { openBrowser: true });
 });
 
 setupDrag();
@@ -557,6 +564,8 @@ function switchTab(name) {
   if (name === 'folders' && !fb.root) {
     if (state.folder) openFolders(state.folder);
     else toast('先选择一个目录，或点「选择…」');
+  } else if (name === 'folders' && state.folder && fb.root !== state.folder) {
+    loadSubdirs();
   }
 }
 
