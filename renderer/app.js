@@ -17,6 +17,7 @@ const els = {
   clearText: $('clear-text'),
   undo: $('undo'),
   restore: $('restore'),
+  refresh: $('refresh'),
   apply: $('apply'),
   badge: $('state-badge'),
   cats: $('cats'),
@@ -144,6 +145,7 @@ function setFolder(p) {
   els.folder.value = p;
   els.folderLabel.textContent = p.split(/[\\/]/).filter(Boolean).pop() || p;
   els.apply.disabled = false;
+  els.refresh.disabled = false;
   refreshFolderState();
 }
 
@@ -481,6 +483,15 @@ els.clearText.addEventListener('click', () => {
   schedulePreview();
 });
 els.apply.addEventListener('click', applyToFolder);
+els.refresh.addEventListener('click', async () => {
+  if (!state.folder) return;
+  try {
+    await api.forceRefresh(state.folder);
+    toast('已请求资源管理器刷新');
+  } catch (err) {
+    toast(errorMessage(err), 'error');
+  }
+});
 els.undo.addEventListener('click', undoLastApply);
 els.restore.addEventListener('click', restoreDefault);
 els.import.addEventListener('click', useImportedImage);

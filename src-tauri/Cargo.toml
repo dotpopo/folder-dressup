@@ -1,6 +1,6 @@
 [package]
 name = "folder-dressup"
-version = "1.0.0"
+version = "1.0.1"
 description = "给 Windows 文件夹换上喜欢的颜色与造型"
 edition = "2021"
 rust-version = "1.77"
@@ -22,6 +22,7 @@ windows-sys = { version = "0.59", features = [
   "Win32_Foundation",
   "Win32_Storage_FileSystem",
   "Win32_UI_Shell",
+  "Win32_UI_Shell_Common",
 ] }
 
 [target.'cfg(target_os = "macos")'.dependencies]

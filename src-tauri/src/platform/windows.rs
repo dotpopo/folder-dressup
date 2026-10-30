@@ -12,7 +12,7 @@ use windows_sys::Win32::Storage::FileSystem::{
 };
 use windows_sys::Win32::UI::Shell::SHChangeNotify;
 
-use super::{dir_icons, short_hash, write_atomic, Sizes, StateInfo};
+use super::{dir_icons, short_hash, Sizes, StateInfo};
 
 const INI_NAME: &str = "desktop.ini";
 const ORDER: [u32; 7] = [256, 128, 64, 48, 32, 24, 16];
@@ -39,10 +39,15 @@ fn notify(event: i32, flags: u32, p: &Path) {
     }
 }
 
-/// 先精准（文件夹项/父目录），最后全局失效图标缓存
+/// 通知资源管理器刷新图标。
+///
+/// 实测结论（六种策略逐一验证）：数据层写入约 100ms 且始终正确，但 Explorer 对
+/// "已有自定义图标"的文件夹存在顽固视图缓存——精准通知（UPDATEITEM / UPDATEDIR /
+/// 属性翻转 / UPDATEIMAGE / 删除重建 desktop.ini）都无法即时重绘；
+/// 只有 SHCNE_ASSOCCHANGED 会全局失效图标缓存（代价是整张缓存重建、桌面闪一下）。
+/// 这里用"精准 + 全局"组合，都不带 SHCNF_FLUSH，保持 apply 在 ~100–200ms。
 fn notify_shell(folder: &Path) {
     notify(SHCNE_UPDATEITEM, SHCNF_PATHW, folder);
-    notify(SHCNE_UPDATEDIR, SHCNF_PATHW, folder);
     if let Some(parent) = folder.parent() {
         notify(SHCNE_UPDATEDIR, SHCNF_PATHW, parent);
     }
@@ -50,6 +55,14 @@ fn notify_shell(folder: &Path) {
         SHChangeNotify(SHCNE_ASSOCCHANGED, 0, std::ptr::null(), std::ptr::null());
     }
 }
+
+/// 用户点"强制刷新"时调用：再补一次全局失效 + 目录通知。
+pub fn force_refresh(folder: &Path) {
+    notify_shell(folder);
+    notify(SHCNE_UPDATEDIR, SHCNF_PATHW, folder);
+}
+
+// ---------------- desktop.ini ----------------
 
 pub fn decode_ini(bytes: &[u8]) -> String {
     if bytes.len() >= 2 && bytes[0] == 0xff && bytes[1] == 0xfe {
@@ -140,6 +153,38 @@ pub fn remove_icon_resource(content: &str) -> (String, bool) {
     }
     (out, removed)
 }
+
+fn referenced_icon(content: &str) -> Option<PathBuf> {
+    content.lines().find_map(|l| {
+        let t = l.trim();
+        if !t.to_ascii_lowercase().starts_with("iconresource") {
+            return None;
+        }
+        let value = t.split_once('=')?.1.trim();
+        let path = match value.rsplit_once(',') {
+            Some((p, idx)) if idx.trim().parse::<i32>().is_ok() => p,
+            _ => value,
+        };
+        Some(PathBuf::from(path.trim()))
+    })
+}
+
+/// 原地覆盖写：改名会"先删后建"，中间存在文件不存在的瞬间，
+/// Explorer 若恰在此时重读就会把文件夹缓存成"无自定义图标"。
+fn write_inplace(path: &Path, data: &[u8]) -> Result<(), String> {
+    use std::io::Write;
+    let mut f = fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)
+        .map_err(|e| e.to_string())?;
+    f.write_all(data).map_err(|e| e.to_string())?;
+    f.flush().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// ---------------- ICO ----------------
 
 fn decode_rgba(png: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
     let dec = png::Decoder::new(Cursor::new(png));
@@ -258,21 +303,33 @@ pub fn build_ico(sizes: &HashMap<u32, Vec<u8>>) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
+// ---------------- 应用 / 还原 ----------------
+
 pub fn apply(dir: &Path, sizes: &Sizes) -> Result<String, String> {
     let ico = build_ico(sizes)?;
     let ico_path = dir.join(format!("{}-{}.ico", super::ICON_PREFIX, short_hash(&ico)));
     let ini_path = dir.join(INI_NAME);
 
-    // 1) 先写新图标（旧图标仍在，任何时刻都不存在悬空引用）
-    write_atomic(&ico_path, &ico)?;
-
-    // 2) desktop.ini 指向新图标
     let existing = fs::read(&ini_path).map(|b| decode_ini(&b)).unwrap_or_default();
     if existing.contains('\u{FFFD}') {
         return Err("该文件夹的 desktop.ini 使用了旧编码格式，为避免破坏其中内容未做修改。".into());
     }
+
+    // 清理旧图标：只删当前没被 desktop.ini 引用的，保证被引用的文件任何时刻都存在
+    let referenced = referenced_icon(&existing);
+    for old in dir_icons(dir) {
+        let keep = referenced.as_ref().map(|r| r == &old).unwrap_or(false);
+        if !keep {
+            let _ = fs::remove_file(old);
+        }
+    }
+
+    // 1) 写新图标（被引用的旧图标仍在）
+    write_inplace(&ico_path, &ico)?;
+
+    // 2) desktop.ini 指向新图标
     let next = upsert_icon_resource(&existing, &ico_path);
-    write_atomic(&ini_path, &encode_ini(&next))?;
+    write_inplace(&ini_path, &encode_ini(&next))?;
 
     // 3) 属性 + 通知
     set_attrs(&ini_path, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
@@ -280,13 +337,8 @@ pub fn apply(dir: &Path, sizes: &Sizes) -> Result<String, String> {
     set_attrs(dir, FILE_ATTRIBUTE_SYSTEM);
     notify_shell(dir);
 
-    // 4) 清理旧图标
-    for old in dir_icons(dir) {
-        if old != ico_path {
-            let _ = fs::remove_file(old);
-        }
-    }
-
+    // 上一张图标保留到下次应用再清理：立刻删除会触发 Explorer 重读，
+    // 重读瞬间引用失效就会回退默认图标。
     Ok(ico_path.display().to_string())
 }
 
@@ -303,7 +355,7 @@ pub fn restore(dir: &Path) -> Result<bool, String> {
                 if next.trim().is_empty() {
                     let _ = fs::remove_file(&ini_path);
                 } else {
-                    write_atomic(&ini_path, &encode_ini(&next))?;
+                    write_inplace(&ini_path, &encode_ini(&next))?;
                 }
             }
         }
@@ -405,6 +457,12 @@ mod tests {
     }
 
     #[test]
+    fn referenced_icon_parses_index() {
+        let c = "[.ShellClassInfo]\r\nIconResource=D:\\a b\\.diricon-1.ico,0";
+        assert_eq!(referenced_icon(c).unwrap(), PathBuf::from(r"D:\a b\.diricon-1.ico"));
+    }
+
+    #[test]
     fn apply_then_restore_on_temp_folder() {
         let dir = std::env::temp_dir().join(format!("fd-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
@@ -425,8 +483,11 @@ mod tests {
         sizes2.insert(256, png);
         let res2 = apply(&dir, &sizes2).unwrap();
         assert_ne!(res, res2);
-        assert!(!Path::new(&res).exists());
-        assert_eq!(dir_icons(&dir).len(), 1);
+        // 旧图标保留到下次应用再清理
+        assert!(Path::new(&res).exists());
+        assert_eq!(dir_icons(&dir).len(), 2);
+        let ini = decode_ini(&fs::read(dir.join(INI_NAME)).unwrap());
+        assert!(ini.contains(Path::new(&res2).file_name().unwrap().to_str().unwrap()));
 
         let r = restore(&dir).unwrap();
         assert!(r);

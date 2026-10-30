@@ -27,6 +27,7 @@
     },
     restoreIcon: (folder) => invoke('restore_icon', { folder }),
     getState: (folder) => invoke('get_state', { folder }),
+    forceRefresh: (folder) => invoke('force_refresh', { folder }),
     packsList: () => invoke('packs_list'),
     packFiles: (dir) => invoke('pack_files', { dir }),
     packImage: (dir, file) => invoke('pack_image', { dir, file }),

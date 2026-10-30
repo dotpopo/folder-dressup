@@ -70,11 +70,11 @@ jobs:
             \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" \) \
             ! -name "*.sig" -print0 | while IFS= read -r -d '' f; do
             case "$(basename "$f")" in
-              *-setup.exe) cp "$f" "dist-artifacts/FolderDressup-${GITHUB_REF_NAME}-windows-x64-setup.exe" ;;
-              *.msi)       cp "$f" "dist-artifacts/FolderDressup-${GITHUB_REF_NAME}-windows-x64.msi" ;;
-              *.dmg)       cp "$f" "dist-artifacts/FolderDressup-${GITHUB_REF_NAME}-macos-universal.dmg" ;;
-              *.AppImage)  cp "$f" "dist-artifacts/FolderDressup-${GITHUB_REF_NAME}-linux-x86_64.AppImage" ;;
-              *.deb)       cp "$f" "dist-artifacts/FolderDressup-${GITHUB_REF_NAME}-linux-amd64.deb" ;;
+              *-setup.exe) cp "$f" "dist-artifacts/FolderDressup-windows-x64-setup.exe" ;;
+              *.msi)       cp "$f" "dist-artifacts/FolderDressup-windows-x64.msi" ;;
+              *.dmg)       cp "$f" "dist-artifacts/FolderDressup-macos-universal.dmg" ;;
+              *.AppImage)  cp "$f" "dist-artifacts/FolderDressup-linux-x86_64.AppImage" ;;
+              *.deb)       cp "$f" "dist-artifacts/FolderDressup-linux-amd64.deb" ;;
             esac
           done
           ls -la dist-artifacts
@@ -83,7 +83,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
-          name: 文件夹换装 v1.0.0
+          name: 文件夹换装 v1.0.1
           draft: true
           fail_on_unmatched_files: false
           body: |

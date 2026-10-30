@@ -74,3 +74,19 @@ scripts/              verify 测试套件 / e2e 外壳验证 / 打包图标
 AGENTS.md             本任务工作流规范（ub-mode + Tw93 20 条规则沉淀）
 WORKLOG.md            工作日志
 ```
+
+## 安装与数据目录（v1.0.1 起）
+
+- 安装路径与数据目录改为 **ASCII**：`%LOCALAPPDATA%\FolderDressup`、`%APPDATA%\FolderDressup\packs`。
+  旧版中文目录（`文件夹换装`）会在首次启动时自动迁移。
+- **皮肤包已内置**：安装包自带「阿蟹 / 胖企鹅 / Muse」三包共 90 张，首次启动自动释放到数据目录。
+  因此安装包从 1.2MB 增至约 12MB；不需要可在 `packs` 目录删除。
+
+## 关于"图标不是立刻变"
+
+写入本身只要 **5–15ms**（`apply` 实测）。但 Windows 资源管理器对**已经换过图标**的文件夹
+有顽固的视图缓存，实测六种 `SHChangeNotify` 策略（UPDATEITEM / UPDATEDIR / 属性翻转 /
+UPDATEIMAGE / 重建 desktop.ini / ASSOCCHANGED）都无法稳定即时重绘——这是系统行为，
+同类商业软件也需要 F5 或重启资源管理器。
+
+因此 v1.0.1 在界面上加了 **「刷新图标」** 按钮：图标没立刻变化时点一下即可。

@@ -70,3 +70,6 @@ pub fn state(dir: &Path) -> Result<StateInfo, String> {
         has_icon_resource: ico_exists,
     })
 }
+
+/// 非 Windows 平台没有全局图标缓存，重新设置一次即可。
+pub fn force_refresh(_dir: &Path) {}

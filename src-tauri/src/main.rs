@@ -16,12 +16,68 @@ const IMAGE_MAX_BYTES: u64 = 10 * 1024 * 1024;
 
 // ---------------- 皮肤包 ----------------
 
-fn packs_root() -> PathBuf {
+fn data_root() -> PathBuf {
     let base = std::env::var("APPDATA")
         .or_else(|_| std::env::var("XDG_DATA_HOME"))
         .or_else(|_| std::env::var("HOME").map(|h| format!("{}/.local/share", h)))
         .unwrap_or_default();
-    PathBuf::from(base).join("文件夹换装").join("packs")
+    let dir = PathBuf::from(base).join("FolderDressup");
+    // 早期版本用过中文目录名，存在就迁移过来（ASCII 路径对命令行/脚本更友好）
+    let legacy = PathBuf::from(&std::env::var("APPDATA").unwrap_or_default()).join("文件夹换装");
+    if !dir.exists() && legacy.exists() {
+        let _ = fs::create_dir_all(&dir);
+        let _ = fs::rename(&legacy, &dir);
+    }
+    dir
+}
+
+fn packs_root() -> PathBuf {
+    data_root().join("packs")
+}
+
+/// 首次运行时把安装包内自带的皮肤包释放到用户数据目录
+fn seed_packs(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    let target = packs_root();
+    if target.exists() {
+        let has_any = fs::read_dir(&target)
+            .map(|mut it| it.any(|e| e.map(|e| e.path().is_dir()).unwrap_or(false)))
+            .unwrap_or(false);
+        if has_any {
+            return;
+        }
+    }
+    let Ok(res) = app.path().resolve("packs-seed", tauri::path::BaseDirectory::Resource) else {
+        return;
+    };
+    if !res.is_dir() {
+        return;
+    }
+    let _ = fs::create_dir_all(&target);
+    if let Ok(entries) = fs::read_dir(&res) {
+        for e in entries.flatten() {
+            let src = e.path();
+            if !src.is_dir() {
+                continue;
+            }
+            let dst = target.join(e.file_name());
+            let _ = fs::create_dir_all(&dst);
+            if let Ok(files) = fs::read_dir(&src) {
+                for f in files.flatten() {
+                    if f.path().is_file() {
+                        let _ = fs::copy(f.path(), dst.join(f.file_name()));
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[tauri::command]
+fn force_refresh(folder: String) -> Result<(), String> {
+    let dir = assert_folder(&folder)?;
+    imp::force_refresh(&dir);
+    Ok(())
 }
 
 fn is_image(p: &Path) -> bool {
@@ -251,6 +307,10 @@ fn pick_image(app: tauri::AppHandle) -> Result<Option<String>, String> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            seed_packs(app.handle());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             apply_icon,
             restore_icon,
@@ -261,7 +321,8 @@ fn main() {
             ingest_drop,
             add_pack_folder,
             pick_folder,
-            pick_image
+            pick_image,
+            force_refresh
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
