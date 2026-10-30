@@ -29,15 +29,15 @@
 
 | 平台 | 文件 | 体积 |
 |---|---|---|
-| Windows | （NSIS 安装）/  / （免安装） | 1.2–3.5 MB |
-| macOS | （universal，Apple Silicon + Intel） | 由 CI 构建 |
-| Linux |  /  | 由 CI 构建 |
+| Windows | `FolderDressup_*_x64-setup.exe`（NSIS 安装）/ `.msi` / `_portable.exe`（免安装） | 1.2–3.5 MB |
+| macOS | `*.dmg`（universal，Apple Silicon + Intel） | 由 CI 构建 |
+| Linux | `*.AppImage` / `*.deb` | 由 CI 构建 |
 
 三个平台共用同一套界面与皮肤包，但「换图标」的机制按系统不同：
 
-- **Windows**：写入  + 隐藏  + 文件属性， 刷新
-- **macOS**： 写入文件夹的自定义图标
-- **Linux**：文件夹内  指向 PNG（GNOME/KDE/Thunar 均识别）
+- **Windows**：写入 `desktop.ini` + 隐藏 `.ico` + 文件属性，`SHChangeNotify` 刷新
+- **macOS**：`NSWorkspace.setIcon` 写入文件夹的自定义图标
+- **Linux**：文件夹内 `.directory` 指向 PNG（GNOME/KDE/Thunar 均识别）
 
 > 另有 Electron 版作为兼容性兜底（86.6 MB），仅在 Tauri 版无法运行时使用。
 
