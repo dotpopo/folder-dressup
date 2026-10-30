@@ -682,3 +682,83 @@ els.fbNext.addEventListener('click', () => {
     el.textContent = '';
   }
 })();
+
+/* ---------- 一键换装：当前目录下的所有子文件夹，随机套用当前皮肤包 ---------- */
+
+Object.assign(els, {
+  batch: $('batch'),
+  batchBar: $('batch-bar'),
+  batchFill: $('batch-fill'),
+});
+
+async function batchApply() {
+  if (!fb.root) {
+    toast('先选择一个目录');
+    return;
+  }
+  const cat = state.activeCat || '';
+  if (!cat.startsWith('pack:')) {
+    toast('请先在下方选择一个皮肤包（Muse / 胖企鹅 / 阿蟹）');
+    return;
+  }
+  const pack = packCats.find((p) => `pack:${p.dir}` === cat);
+  if (!pack) {
+    toast('皮肤包未找到');
+    return;
+  }
+
+  let files;
+  try {
+    files = await api.packFiles(pack.dir);
+  } catch (err) {
+    toast(errorMessage(err), 'error');
+    return;
+  }
+  if (!files.length) {
+    toast('这个皮肤包里没有图片');
+    return;
+  }
+
+  const page = await api.listSubdirs(fb.root, 0, 200, '');
+  const targets = page.items.map((i) => i.path);
+  if (!targets.length) {
+    toast('这个目录下没有子文件夹');
+    return;
+  }
+  const ok = window.confirm(
+    `将用「${pack.name}」的皮肤随机换装 ${targets.length} 个子文件夹，背景色取当前调色盘。\n\n继续吗？`
+  );
+  if (!ok) return;
+
+  els.batch.disabled = true;
+  els.batchBar.hidden = false;
+  els.batchFill.style.width = '0%';
+  let done = 0;
+  let failed = 0;
+
+  for (const folder of targets) {
+    const file = files[Math.floor(Math.random() * files.length)];
+    try {
+      const dataUrl = await api.packImage(pack.dir, file);
+      const spec = { hue: state.spec.hue, text: '', image: dataUrl };
+      const sizes = await renderIconSizes(spec);
+      await api.applyIcon(folder, sizes);
+      done++;
+    } catch {
+      failed++;
+    }
+    const pct = Math.round(((done + failed) / targets.length) * 100);
+    els.batchFill.style.width = pct + '%';
+    if ((done + failed) % 5 === 0) {
+      toast(`正在换装 ${done + failed}/${targets.length}`);
+    }
+  }
+
+  els.batchBar.hidden = true;
+  els.batch.disabled = false;
+  toast(failed ? `完成：成功 ${done} 个，失败 ${failed} 个` : `已换装 ${done} 个子文件夹，图标没变就点「刷新图标」`);
+  await loadSubdirs();
+  if (state.folder) refreshFolderState();
+}
+
+els.batch.addEventListener('click', batchApply);

@@ -793,3 +793,27 @@ input::placeholder {
   user-select: none;
   z-index: 5;
 }
+
+.batch-btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  flex: none;
+  white-space: nowrap;
+}
+
+.batch-bar {
+  height: 3px;
+  background: #eceef2;
+  border-radius: 999px;
+  overflow: hidden;
+  flex: none;
+  margin-bottom: 8px;
+}
+
+.batch-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.15s linear;
+}

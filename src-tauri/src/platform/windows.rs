@@ -46,66 +46,6 @@ fn notify(event: i32, flags: u32, p: &Path) {
 /// 属性翻转 / UPDATEIMAGE / 删除重建 desktop.ini）都无法即时重绘；
 /// 只有 SHCNE_ASSOCCHANGED 会全局失效图标缓存（代价是整张缓存重建、桌面闪一下）。
 /// 这里用"精准 + 全局"组合，都不带 SHCNF_FLUSH，保持 apply 在 ~100–200ms。
-/// 让已打开的资源管理器窗口自己刷新（比 SHChangeNotify 可靠得多）：
-/// 找到标题匹配该目录的 CabinetWClass 窗口，向其 SHELLDLL_DefView 子窗口
-/// 发送 FCIDM_SHVIEW_REFRESH(0x7104)。
-fn refresh_explorer_windows(dir: &Path) {
-    use std::ffi::{c_void, OsString};
-    use std::os::windows::ffi::OsStringExt;
-    use windows_sys::Win32::Foundation::{BOOL, LPARAM, TRUE};
-    use windows_sys::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, FindWindowExW, GetClassNameW, GetWindowTextW, PostMessageW, WM_COMMAND,
-    };
-
-    struct Ctx {
-        needle: String,
-        hits: Vec<*mut c_void>,
-    }
-
-    unsafe extern "system" fn cb(hwnd: *mut c_void, lparam: LPARAM) -> BOOL {
-        let ctx = &mut *(lparam as *mut Ctx);
-        let mut buf = [0u16; 512];
-        let n = GetClassNameW(hwnd, buf.as_mut_ptr(), buf.len() as i32);
-        let class = String::from_utf16_lossy(&buf[..n.max(0) as usize]);
-        if class != "CabinetWClass" {
-            return TRUE;
-        }
-        let n = GetWindowTextW(hwnd, buf.as_mut_ptr(), buf.len() as i32);
-        let title = String::from_utf16_lossy(&buf[..n.max(0) as usize]).to_lowercase();
-        if title.contains(&ctx.needle) {
-            ctx.hits.push(hwnd);
-        }
-        TRUE
-    }
-
-    let needle = dir
-        .file_name()
-        .map(|n| n.to_string_lossy().to_lowercase())
-        .unwrap_or_default();
-    if needle.is_empty() {
-        return;
-    }
-
-    let mut ctx = Ctx { needle, hits: Vec::new() };
-    unsafe {
-        EnumWindows(Some(cb), &mut ctx as *mut Ctx as LPARAM);
-    }
-
-    let mut view_name: Vec<u16> = OsString::from("SHELLDLL_DefView")
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect();
-    for hwnd in ctx.hits {
-        let view = unsafe { FindWindowExW(hwnd, std::ptr::null_mut(), view_name.as_mut_ptr(), std::ptr::null()) };
-        if !view.is_null() {
-            // 0x7104 = FCIDM_SHVIEW_REFRESH
-            unsafe {
-                PostMessageW(view, WM_COMMAND, 0x7104, 0);
-            }
-        }
-    }
-}
-
 fn notify_shell(folder: &Path) {
     notify(SHCNE_UPDATEITEM, SHCNF_PATHW, folder);
     if let Some(parent) = folder.parent() {
@@ -113,9 +53,6 @@ fn notify_shell(folder: &Path) {
     }
     unsafe {
         SHChangeNotify(SHCNE_ASSOCCHANGED, 0, std::ptr::null(), std::ptr::null());
-    }
-    if let Some(parent) = folder.parent() {
-        refresh_explorer_windows(parent);
     }
 }
 
