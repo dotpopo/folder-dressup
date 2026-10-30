@@ -294,6 +294,57 @@ fn import_pack_folder(app: tauri::AppHandle) -> Result<Option<PackInfo>, String>
     }))
 }
 
+#[derive(serde::Serialize)]
+struct DirEntryInfo {
+    name: String,
+    path: String,
+    customized: bool,
+}
+
+#[derive(serde::Serialize)]
+struct DirPage {
+    total: usize,
+    items: Vec<DirEntryInfo>,
+}
+
+/// 列出父目录下的子文件夹（分页 + 名称过滤），并标注是否已换装
+#[tauri::command]
+fn list_subdirs(parent: String, offset: usize, limit: usize, query: String) -> Result<DirPage, String> {
+    let dir = assert_folder(&parent)?;
+    let q = query.trim().to_lowercase();
+    let mut names: Vec<(String, PathBuf)> = fs::read_dir(&dir)
+        .map_err(|e| e.to_string())?
+        .flatten()
+        .filter(|e| e.path().is_dir())
+        .map(|e| (e.file_name().to_string_lossy().to_string(), e.path()))
+        .filter(|(n, _)| q.is_empty() || n.to_lowercase().contains(&q))
+        .collect();
+    names.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+    let total = names.len();
+    let items = names
+        .into_iter()
+        .skip(offset)
+        .take(limit.min(200))
+        .map(|(name, path)| {
+            let customized = imp::state(&path).map(|s| s.customized).unwrap_or(false);
+            DirEntryInfo {
+                name,
+                path: path.display().to_string(),
+                customized,
+            }
+        })
+        .collect();
+    Ok(DirPage { total, items })
+}
+
+/// 返回父目录路径（用于上一级）
+#[tauri::command]
+fn parent_dir(path: String) -> Option<String> {
+    PathBuf::from(path)
+        .parent()
+        .map(|p| p.display().to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -310,7 +361,9 @@ fn main() {
             pick_folder,
             pick_image,
             force_refresh,
-            import_pack_folder
+            import_pack_folder,
+            list_subdirs,
+            parent_dir
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
