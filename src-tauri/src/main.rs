@@ -35,6 +35,46 @@ fn packs_root() -> PathBuf {
     data_root().join("packs")
 }
 
+
+/// 首次运行时把安装包内自带的皮肤包释放到用户数据目录
+fn seed_packs(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    let target = packs_root();
+    let has_any = fs::read_dir(&target)
+        .map(|mut it| it.any(|e| e.map(|e| e.path().is_dir()).unwrap_or(false)))
+        .unwrap_or(false);
+    if has_any {
+        return;
+    }
+    let Ok(res) = app
+        .path()
+        .resolve("packs-seed", tauri::path::BaseDirectory::Resource)
+    else {
+        return;
+    };
+    if !res.is_dir() {
+        return;
+    }
+    let _ = fs::create_dir_all(&target);
+    if let Ok(entries) = fs::read_dir(&res) {
+        for e in entries.flatten() {
+            let src = e.path();
+            if !src.is_dir() {
+                continue;
+            }
+            let dst = target.join(e.file_name());
+            let _ = fs::create_dir_all(&dst);
+            if let Ok(files) = fs::read_dir(&src) {
+                for f in files.flatten() {
+                    if f.path().is_file() {
+                        let _ = fs::copy(f.path(), dst.join(f.file_name()));
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[tauri::command]
 fn force_refresh(folder: String) -> Result<(), String> {
     let dir = assert_folder(&folder)?;
@@ -389,6 +429,10 @@ fn open_in_explorer(path: String) -> Result<(), String> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            seed_packs(app.handle());
+            Ok(())
+        })
         
         .invoke_handler(tauri::generate_handler![
             apply_icon,

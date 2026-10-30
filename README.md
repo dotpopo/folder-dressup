@@ -120,3 +120,8 @@ UPDATEIMAGE / 重建 desktop.ini / ASSOCCHANGED）都无法稳定即时重绘—
 - 已自带透明通道的（Axie）保留原样。
 
 全部离线处理，成品是带透明通道的 WebP，应用端无额外依赖。
+
+## 皮肤包内嵌（v1.0.10）
+
+抠图后的三套皮肤包只有 **2.2 MB**，已重新内嵌进安装包：安装包 3.2 MB，首次启动自动释放到数据目录，
+无需再单独下载。（Release 里仍保留 `FolderDressup-packs.zip` 作为备份获取方式。）
