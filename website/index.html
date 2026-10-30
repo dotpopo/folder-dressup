@@ -161,19 +161,19 @@
 <section id="download">
   <div class="wrap">
     <h2>免费下载</h2>
-    <p class="sub-title">Windows · macOS · Linux · 全部免费，无需注册</p>
+    <p class="sub-title">Windows · macOS · Linux · 全部免费，无需注册 · 当前版本 <span id="latest-ver">v1.0.18</span></p>
     <div class="dl-grid">
       <a class="dl-card" href="https://github.com/dotpopo/folder-dressup/releases/latest/download/FolderDressup-windows-x64-setup.exe">
-        <span class="dl-ico">🪟</span><span class="dl-name">Windows</span><span class="dl-meta">安装包 1.2 MB · MSI 1.7 MB</span>
+        <span class="dl-ico">🪟</span><span class="dl-name">Windows</span><span class="dl-meta" data-dl="win">安装包 3.2 MB · MSI 3.7 MB</span>
       </a>
       <a class="dl-card" href="https://github.com/dotpopo/folder-dressup/releases/latest/download/FolderDressup-macos-universal.dmg">
-        <span class="dl-ico">🍎</span><span class="dl-name">macOS</span><span class="dl-meta">dmg · 通用版 · 3.3 MB</span>
+        <span class="dl-ico">🍎</span><span class="dl-name">macOS</span><span class="dl-meta" data-dl="mac">dmg · 通用版 · 5.3 MB</span>
       </a>
       <a class="dl-card" href="https://github.com/dotpopo/folder-dressup/releases/latest/download/FolderDressup-linux-amd64.deb">
-        <span class="dl-ico">🐧</span><span class="dl-name">Linux</span><span class="dl-meta">deb 1.5 MB · AppImage 76 MB</span>
+        <span class="dl-ico">🐧</span><span class="dl-name">Linux</span><span class="dl-meta" data-dl="linux">deb 3.5 MB · AppImage 78.4 MB</span>
       </a>
       <a class="dl-card" href="https://github.com/dotpopo/folder-dressup/releases/latest/download/FolderDressup-packs.zip">
-        <span class="dl-ico">🎨</span><span class="dl-name">皮肤包</span><span class="dl-meta">三套 90 张 · 1.8 MB</span>
+        <span class="dl-ico">🎨</span><span class="dl-name">皮肤包</span><span class="dl-meta" data-dl="packs">三套 90 张 · 2.0 MB</span>
       </a>
     </div>
     <p class="sub-title" style="margin-top:18px; font-size:13px;">皮肤包下载后解压，在应用里点「导入皮肤包…」选择解压出的文件夹即可。免安装版、历史版本见 <a href="https://github.com/dotpopo/folder-dressup/releases" style="color:var(--accent); text-decoration:none;">GitHub Releases</a></p>
@@ -187,5 +187,62 @@
     <div>发布片由 <a href="https://github.com/alchaincyf/huashu-motion">huashu-motion</a> 全代码生成 · 本页静态无追踪。</div>
   </div>
 </footer>
+<script>
+/* 下载体积与版本号跟随 GitHub 最新正式版，避免每次发版后忘记改数字。
+   接口不可用时保留 HTML 里写死的兜底值。 */
+(function () {
+  var CARDS = {
+    win: {
+      need: ['FolderDressup-windows-x64-setup.exe', 'FolderDressup-windows-x64.msi'],
+      text: function (s) {
+        return '安装包 ' + mb(s['FolderDressup-windows-x64-setup.exe']) +
+               ' · MSI ' + mb(s['FolderDressup-windows-x64.msi']);
+      }
+    },
+    mac: {
+      need: ['FolderDressup-macos-universal.dmg'],
+      text: function (s) { return 'dmg · 通用版 · ' + mb(s['FolderDressup-macos-universal.dmg']); }
+    },
+    linux: {
+      need: ['FolderDressup-linux-amd64.deb', 'FolderDressup-linux-x86_64.AppImage'],
+      text: function (s) {
+        return 'deb ' + mb(s['FolderDressup-linux-amd64.deb']) +
+               ' · AppImage ' + mb(s['FolderDressup-linux-x86_64.AppImage']);
+      }
+    },
+    packs: {
+      need: ['FolderDressup-packs.zip'],
+      text: function (s) { return '三套 90 张 · ' + mb(s['FolderDressup-packs.zip']); }
+    }
+  };
+
+  function mb(n) { return (n / 1048576).toFixed(1).replace(/\.0$/, '') + ' MB'; }
+
+  var ctrl = new AbortController();
+  setTimeout(function () { ctrl.abort(); }, 6000);
+
+  fetch('https://api.github.com/repos/dotpopo/folder-dressup/releases/latest', {
+    cache: 'no-store',
+    signal: ctrl.signal
+  }).then(function (r) {
+    return r.ok ? r.json() : null;
+  }).then(function (rel) {
+    if (!rel || !rel.assets) return;
+
+    var size = {};
+    rel.assets.forEach(function (a) { size[a.name] = a.size; });
+
+    Object.keys(CARDS).forEach(function (key) {
+      var card = CARDS[key];
+      if (!card.need.every(function (n) { return size[n] > 0; })) return;
+      var el = document.querySelector('.dl-meta[data-dl="' + key + '"]');
+      if (el) el.textContent = card.text(size);
+    });
+
+    var ver = document.getElementById('latest-ver');
+    if (ver && rel.tag_name) ver.textContent = rel.tag_name;
+  }).catch(function () { /* 保留兜底数字 */ });
+})();
+</script>
 </body>
 </html>

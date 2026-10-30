@@ -88,8 +88,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
-          name: 文件夹换装 v1.0.18
-          draft: true
+          name: 文件夹换装 ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          draft: false
+          make_latest: true
           fail_on_unmatched_files: false
           body: |
             跨平台构建：Windows（NSIS / MSI）、macOS（dmg，universal）、Linux（AppImage / deb）。
