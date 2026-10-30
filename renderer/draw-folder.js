@@ -171,39 +171,25 @@ async function drawImageFront(ctx, spec) {
     img = await loadImage(Buffer.from(b64, 'base64'));
   }
 
-  // 先用色相画出彩色正面，图片以留白方式贴在中间——
-  // 这样调色器对图片皮肤同样有效（透明背景的图还能透出底色）。
+  // 色相决定背景色；主体（透明通道）居中贴合，背景由调色器控制
   drawFront(ctx, spec.hue);
 
-  const pad = 44;
-  const x = 60 + pad;
-  const y = 306 + pad;
-  const w = 880 - pad * 2;
-  const h = 578 - pad * 2;
+  const pad = 34;
   const iw = img.width || img.naturalWidth || 1;
   const ih = img.height || img.naturalHeight || 1;
+  const scale = Math.min((880 - pad * 2) / iw, (578 - pad * 2) / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
 
   ctx.save();
   frontPath(ctx);
   ctx.clip();
-  roundRectPath(ctx, x, y, w, h, 40);
-  ctx.save();
-  ctx.clip();
-  // 白底衬托，避免透明图片露出杂色
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x, y, w, h);
-  const scale = Math.max(w / iw, h / ih);
-  const dw = iw * scale;
-  const dh = ih * scale;
-  ctx.drawImage(img, x + w / 2 - dw / 2, y + h / 2 - dh / 2, dw, dh);
-  ctx.restore();
-  // 图片边缘的柔和阴影
-  ctx.save();
-  roundRectPath(ctx, x, y, w, h, 40);
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.restore();
+  ctx.drawImage(img, 500 - dw / 2, 595 - dh / 2, dw, dh);
+  const gloss = ctx.createLinearGradient(0, 306, 0, 640);
+  gloss.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
+  gloss.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = gloss;
+  ctx.fillRect(60, 306, 880, 334);
   ctx.restore();
 }
 
