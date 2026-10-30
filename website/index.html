@@ -54,6 +54,11 @@
   .card p { margin-top: 10px; color: var(--sub); font-size: 14.5px; line-height: 1.75; }
 
   .shots { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .pack-shots { margin-top: 30px; display: flex; flex-direction: column; gap: 18px; }
+  .pack-shots figure { margin: 0; background: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 1px 2px rgba(20,24,34,.04), 0 12px 34px rgba(20,24,34,.06); }
+  .pack-shots img { width: 100%; display: block; border-radius: 12px; }
+  .pack-shots figcaption { margin-top: 10px; font-size: 13px; color: var(--sub); text-align: center; }
+
   .shots img { width: 100%; border-radius: 18px; box-shadow: 0 20px 50px rgba(20,24,34,.14); }
   @media (max-width: 760px) { .shots { grid-template-columns: 1fr; } .hero h1 { font-size: 38px; } }
 
@@ -121,6 +126,18 @@
       <div class="card"><div class="ico">🗂️</div><h3>49 张内置预设</h3><p>经典、物品、游戏、美食、海洋、宇宙、节日、表情九个分类，全部现场绘制，不加载任何网络资源。</p></div>
       <div class="card"><div class="ico">🎨</div><h3>皮肤包 · 批量添加</h3><p>把图片文件夹放进皮肤包目录自动成为新分类；或点「批量添加」选任意文件夹，里面的图片整体变为一包。已内置 OpenSea 三个热销合集各 30 张。</p></div>
       <div class="card"><div class="ico">✅</div><h3>一键应用 · 一键还原</h3><p>写入 desktop.ini 与隐藏图标文件，资源管理器立即刷新；支持撤销与恢复默认，应用操作幂等，不会越用越乱。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="packs">
+  <div class="wrap">
+    <h2>三套皮肤包，90 张主体</h2>
+    <p class="sub-title">已抠图：主体保留原样，背景色随调色盘变化</p>
+    <div class="pack-shots">
+      <figure><img src="assets/packs-axie.png" alt="阿蟹皮肤包"><figcaption>阿蟹 · Axie</figcaption></figure>
+      <figure><img src="assets/packs-pudgys.png" alt="胖企鹅皮肤包"><figcaption>胖企鹅 · Lil Pudgys</figcaption></figure>
+      <figure><img src="assets/packs-muse.png" alt="Muse 皮肤包"><figcaption>Muse</figcaption></figure>
     </div>
   </div>
 </section>

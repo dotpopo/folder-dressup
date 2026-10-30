@@ -142,3 +142,21 @@ UPDATEIMAGE / 重建 desktop.ini / ASSOCCHANGED / 向 DefView 发 FCIDM_SHVIEW_R
 
 在「子文件夹」标题栏点 **「一键换装」**：把当前选中皮肤包里的图**随机**分配给当前目录下**所有子文件夹**，
 背景色取当前调色盘颜色。带确认弹窗和进度条；完成后会提示成功/失败数量。
+
+## 皮肤包效果
+
+内置三套皮肤包（各 30 张，已抠图，背景色随调色盘变化）：
+
+**阿蟹 · Axie**
+
+![阿蟹皮肤包](docs/packs-axie.png)
+
+**胖企鹅 · Lil Pudgys**
+
+![胖企鹅皮肤包](docs/packs-pudgys.png)
+
+**Muse**
+
+![Muse 皮肤包](docs/packs-muse.png)
+
+> 皮肤包图片版权归各创作者，仅限个人本地使用，请勿再分发。
