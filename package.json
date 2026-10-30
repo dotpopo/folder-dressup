@@ -1,7 +1,7 @@
 {
   "name": "folder-dressup",
   "productName": "文件夹换装",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "给 Windows 文件夹换上喜欢的颜色与造型",
   "main": "main.js",
   "author": "folder-dressup",

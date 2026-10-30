@@ -198,9 +198,15 @@ async function applyToFolder() {
   }
   els.apply.disabled = true;
   try {
+    // 应用前备份，供「撤销修改」整格回退
+    if (api.backupFolder) {
+      try { await api.backupFolder(state.folder); } catch {}
+    }
     const sizes = await renderIconSizes(state.spec);
     const result = await api.applyIcon(state.folder, sizes);
     saveUndo(state.spec);
+    state.lastApplied = state.folder;
+    state.batchUndo = null;
     els.undo.disabled = false;
     showWarnings(result && result.warnings, `已应用到「${els.folderLabel.textContent}」；图标没变就点「刷新图标」`);
     await refreshFolderState();
@@ -231,6 +237,23 @@ async function undoLastApply() {
     if (fb.root) await loadSubdirs();
     return;
   }
+  // 单次应用的撤销：从备份还原
+  if (state.lastApplied && api.restoreFolderBackup) {
+    const target = state.lastApplied;
+    state.lastApplied = null;
+    els.undo.disabled = true;
+    try {
+      await api.restoreFolderBackup(target);
+      localStorage.removeItem(undoKey(target));
+      toast('已撤销上次换装');
+      if (state.folder === target) await refreshFolderState();
+      if (fb.root) await loadSubdirs();
+    } catch (err) {
+      toast(errorMessage(err), 'error');
+    }
+    return;
+  }
+
   const raw = localStorage.getItem(undoKey(state.folder));
   if (!raw) return;
   try {
