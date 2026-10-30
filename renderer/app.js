@@ -542,6 +542,7 @@ schedulePreview();
 
 Object.assign(els, {
   goUp: $('go-up'),
+  fbUp: $('fb-up'),
   fbQ: $('fb-q'),
   fbTotal: $('fb-total'),
   fbGrid: $('fb-grid'),
@@ -624,17 +625,25 @@ async function loadSubdirs() {
   els.fbNext.disabled = fb.offset + fb.limit >= fb.total;
 }
 
-els.goUp.addEventListener('click', () => {
-  const up = parentOf(fb.root || state.folder);
-  if (up) {
-    setBrowseRoot(up);
-    const sel = fb.root;
-    if (state.folder) {
-      for (const c of els.fbGrid.children) c.classList.remove('selected');
-    }
-  } else {
-    toast('已经是顶层目录');
+// 左侧 📁：在系统资源管理器中打开当前目录（看子目录真实效果）
+els.goUp.addEventListener('click', async () => {
+  const dir = fb.root || (state.folder ? parentOf(state.folder) : '');
+  if (!dir) {
+    toast('先选择一个文件夹');
+    return;
   }
+  try {
+    await api.openInExplorer(dir);
+  } catch (err) {
+    toast(errorMessage(err), 'error');
+  }
+});
+
+// 右栏 ↑：应用内返回上一级
+els.fbUp.addEventListener('click', () => {
+  const up = parentOf(fb.root);
+  if (up) setBrowseRoot(up);
+  else toast('已经是顶层目录');
 });
 
 els.fbQ.addEventListener('input', () => {

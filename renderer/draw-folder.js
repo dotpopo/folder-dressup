@@ -166,35 +166,44 @@ async function drawImageFront(ctx, spec) {
     });
     await loaded;
   } else {
-    // Node 侧（打包脚本 / e2e）：用 @napi-rs/canvas 解码 dataURL
     const { loadImage } = require('@napi-rs/canvas');
     const b64 = spec.image.slice(spec.image.indexOf(',') + 1);
     img = await loadImage(Buffer.from(b64, 'base64'));
   }
 
-  ctx.save();
-  ctx.shadowColor = 'rgba(31, 41, 61, 0.22)';
-  ctx.shadowBlur = 34;
-  ctx.shadowOffsetY = 16;
-  frontPath(ctx);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.restore();
+  // 先用色相画出彩色正面，图片以留白方式贴在中间——
+  // 这样调色器对图片皮肤同样有效（透明背景的图还能透出底色）。
+  drawFront(ctx, spec.hue);
+
+  const pad = 44;
+  const x = 60 + pad;
+  const y = 306 + pad;
+  const w = 880 - pad * 2;
+  const h = 578 - pad * 2;
+  const iw = img.width || img.naturalWidth || 1;
+  const ih = img.height || img.naturalHeight || 1;
 
   ctx.save();
   frontPath(ctx);
   ctx.clip();
-  const w = img.width || img.naturalWidth || 1;
-  const h = img.height || img.naturalHeight || 1;
-  const scale = Math.max(880 / w, 578 / h);
-  const dw = w * scale;
-  const dh = h * scale;
-  ctx.drawImage(img, 500 - dw / 2, 595 - dh / 2, dw, dh);
-  const gloss = ctx.createLinearGradient(0, 306, 0, 640);
-  gloss.addColorStop(0, 'rgba(255, 255, 255, 0.20)');
-  gloss.addColorStop(1, 'rgba(255, 255, 255, 0)');
-  ctx.fillStyle = gloss;
-  ctx.fillRect(60, 306, 880, 340);
+  roundRectPath(ctx, x, y, w, h, 40);
+  ctx.save();
+  ctx.clip();
+  // 白底衬托，避免透明图片露出杂色
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, w, h);
+  const scale = Math.max(w / iw, h / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
+  ctx.drawImage(img, x + w / 2 - dw / 2, y + h / 2 - dh / 2, dw, dh);
+  ctx.restore();
+  // 图片边缘的柔和阴影
+  ctx.save();
+  roundRectPath(ctx, x, y, w, h, 40);
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
   ctx.restore();
 }
 
