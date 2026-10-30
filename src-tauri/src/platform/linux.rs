@@ -2,7 +2,7 @@
 // GNOME(Nautilus)、KDE(Dolphin)、Thunar、Nemo 等均识别。
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::{dir_icons, short_hash, write_atomic, Sizes, StateInfo};
 
@@ -66,4 +66,8 @@ pub fn force_refresh(_dir: &Path) {}
 
 pub fn current_icon(dir: &Path) -> Option<PathBuf> {
     super::dir_icons(dir).into_iter().next()
+}
+
+pub fn reapply_attrs(_dir: &Path) -> Result<(), String> {
+    Ok(())
 }

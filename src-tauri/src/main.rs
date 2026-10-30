@@ -457,6 +457,67 @@ fn app_version(app: tauri::AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
+fn backup_root_for(folder: &str) -> PathBuf {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut h = DefaultHasher::new();
+    folder.to_lowercase().hash(&mut h);
+    data_root().join("backup").join(format!("{:016x}", h.finish()))
+}
+
+/// 备份一个文件夹当前的图标配置（desktop.ini + .ico 文件），供批量撤销使用
+#[tauri::command]
+fn backup_folder(folder: String) -> Result<(), String> {
+    let dir = assert_folder(&folder)?;
+    let backup = backup_root_for(&folder);
+    let _ = fs::remove_dir_all(&backup);
+    fs::create_dir_all(&backup).map_err(|e| e.to_string())?;
+    let mut any = false;
+    if let Ok(entries) = fs::read_dir(&dir) {
+        for e in entries.flatten() {
+            let name = e.file_name().to_string_lossy().to_string();
+            if name == "desktop.ini" || (name.starts_with(".diricon") && name.ends_with(".ico")) {
+                let _ = fs::copy(e.path(), backup.join(&name));
+                any = true;
+            }
+        }
+    }
+    // 记录"本来就没有自定义图标"，撤销时要清空
+    fs::write(backup.join(".was-empty"), if any { b"0" } else { b"1" }).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// 撤销备份：恢复到备份时的图标状态
+#[tauri::command]
+fn restore_folder_backup(folder: String) -> Result<(), String> {
+    let dir = assert_folder(&folder)?;
+    let backup = backup_root_for(&folder);
+    if !backup.is_dir() {
+        return Err("没有可撤销的备份".into());
+    }
+    let was_empty = fs::read(backup.join(".was-empty")).map(|b| b == b"1").unwrap_or(false);
+    // 清掉当前图标与配置
+    let _ = imp::restore(&dir);
+    if !was_empty {
+        if let Ok(entries) = fs::read_dir(&backup) {
+            for e in entries.flatten() {
+                let name = e.file_name().to_string_lossy().to_string();
+                if name == ".was-empty" {
+                    continue;
+                }
+                let _ = fs::copy(e.path(), dir.join(&name));
+            }
+        }
+        imp::reapply_attrs(&dir);
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn has_backup(folder: String) -> bool {
+    backup_root_for(&folder).is_dir()
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -482,7 +543,10 @@ fn main() {
             parent_dir,
             open_in_explorer,
             restart_explorer,
-            app_version
+            app_version,
+            backup_folder,
+            restore_folder_backup,
+            has_backup
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

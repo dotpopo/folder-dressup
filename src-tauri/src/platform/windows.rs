@@ -403,6 +403,17 @@ pub fn current_icon(dir: &Path) -> Option<PathBuf> {
     dir_icons(dir).into_iter().next()
 }
 
+/// 恢复备份后重新设置属性并通知 shell
+pub fn reapply_attrs(dir: &Path) -> Result<(), String> {
+    let ini = dir.join(INI_NAME);
+    if ini.is_file() {
+        set_attrs(&ini, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+    }
+    set_attrs(dir, FILE_ATTRIBUTE_SYSTEM);
+    notify_shell(dir);
+    Ok(())
+}
+
 pub fn state(dir: &Path) -> Result<StateInfo, String> {
     let ico_exists = !dir_icons(dir).is_empty();
     let has_icon_resource = fs::read(dir.join(INI_NAME))

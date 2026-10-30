@@ -150,8 +150,8 @@ function selectFolder(p) {
 }
 
 function setFolder(p) {
-  selectFolder(p);
-  setBrowseRoot(p);
+  // 选择目录 = 切换浏览位置；目标由右侧列表点击决定
+  return setBrowseRoot(p);
 }
 
 
@@ -193,7 +193,7 @@ async function applyToFolder() {
   if (!state.folder) {
     els.pathShell.classList.add('shake');
     setTimeout(() => els.pathShell.classList.remove('shake'), 400);
-    toast('请先选择要换装的文件夹', 'error');
+    toast('请先在右侧「子文件夹」里点选一个文件夹', 'error');
     return;
   }
   els.apply.disabled = true;
@@ -204,6 +204,7 @@ async function applyToFolder() {
     els.undo.disabled = false;
     showWarnings(result && result.warnings, `已应用到「${els.folderLabel.textContent}」；图标没变就点「刷新图标」`);
     await refreshFolderState();
+    if (fb.root) await loadSubdirs();
   } catch (err) {
     toast(errorMessage(err), 'error');
   } finally {
@@ -211,7 +212,25 @@ async function applyToFolder() {
   }
 }
 
-function undoLastApply() {
+async function undoLastApply() {
+  // 一键换装的批量撤销
+  if (state.batchUndo && state.batchUndo.length && api.restoreFolderBackup) {
+    const list = state.batchUndo.slice();
+    state.batchUndo = null;
+    els.undo.disabled = true;
+    els.batchBar.hidden = false;
+    els.batchFill.style.width = '0%';
+    let n = 0;
+    for (const f of list) {
+      try { await api.restoreFolderBackup(f); } catch {}
+      n++;
+      els.batchFill.style.width = Math.round((n / list.length) * 100) + '%';
+    }
+    els.batchBar.hidden = true;
+    toast('已撤销 ' + list.length + ' 个文件夹的换装');
+    if (fb.root) await loadSubdirs();
+    return;
+  }
   const raw = localStorage.getItem(undoKey(state.folder));
   if (!raw) return;
   try {
@@ -575,7 +594,23 @@ async function setBrowseRoot(root) {
   fb.query = '';
   if (els.fbQ) els.fbQ.value = '';
   els.folder.value = root;
+  clearTarget();
   await loadSubdirs();
+  // 目录里没有子文件夹时，把这个目录本身作为目标（否则无从选择）
+  if (fb.total === 0 && root) {
+    selectFolder(root);
+    toast('这个目录没有子文件夹，已选中它本身');
+  }
+}
+
+/** 清空当前目标（浏览目录时用），未选目标不允许应用 */
+function clearTarget() {
+  state.folder = '';
+  state.selectedPreset = state.selectedPreset;
+  els.folderLabel.textContent = '尚未选择文件夹';
+  els.apply.disabled = true;
+  els.restore.disabled = true;
+  els.badge.hidden = true;
 }
 
 async function loadSubdirs() {
@@ -739,6 +774,7 @@ async function batchApply() {
   for (const folder of targets) {
     const file = files[Math.floor(Math.random() * files.length)];
     try {
+      if (api.backupFolder) await api.backupFolder(folder);
       const dataUrl = await api.packImage(pack.dir, file);
       const spec = { hue: state.spec.hue, text: '', image: dataUrl };
       const sizes = await renderIconSizes(spec);
@@ -756,6 +792,8 @@ async function batchApply() {
 
   els.batchBar.hidden = true;
   els.batch.disabled = false;
+  state.batchUndo = targets.slice();
+  els.undo.disabled = false;
   toast(failed ? `完成：成功 ${done} 个，失败 ${failed} 个` : `已换装 ${done} 个子文件夹，图标没变就点「刷新图标」`);
   await loadSubdirs();
   if (state.folder) refreshFolderState();
