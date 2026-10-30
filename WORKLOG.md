@@ -2,6 +2,16 @@
 
 > ub-mode「Keep a Log」：记录每个动作与原因。新条目加在顶部。
 
+## 2026-10-30（换肤性能攻坚 + v1.0.1）
+
+- **实测六种 SHChangeNotify 策略**（item / itemdir / toggle / full / image / recreate）：
+  数据层写入 5–15ms 且始终正确，但 Explorer 对"已有自定义图标"的文件夹存在顽固视图缓存，
+  只有 ASSOCCHANGED 会全局失效（代价是整张缓存重建）。结论：这是系统行为，
+  同类商业软件也需要 F5/重启资源管理器。收敛为 UPDATEITEM + 父目录 UPDATEDIR + ASSOCCHANGED（均不阻塞）。
+- **界面新增「刷新图标」按钮**，图标未即时变化时一键再通知。
+- **安装路径 ASCII 化**：%APPDATA%FolderDressup，旧中文目录自动迁移。
+- **皮肤包内置**：安装包带 12MB 三套包，首次启动释放（临时 APPDATA 模拟全新安装验证通过）。
+- **产物名去版本号** + 官网用 releases/latest/download 永久直链。
 ## 2026-10-30（品牌图标 + 三平台发布）
 
 - **品牌图标**：圆角底板 + 白色文件夹 + 全光谱彩虹条 + 星芒；输出 1024 PNG / 7 尺寸 ICO / 16px 预览图，exe 内嵌图标已提取验证。

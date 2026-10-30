@@ -5,3 +5,5 @@ dist/
 website/site.zip
 src-tauri/target/
 .test-live/
+.tl-*/
+.test-live*/
