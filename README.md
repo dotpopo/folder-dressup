@@ -23,13 +23,23 @@
 
 **在线预览（官网，含发布片与下载）：<https://folder-dressup.wispbyte.app>**
 
+## 两个版本
+
+| 版本 | 体积 | 说明 |
+|---|---|---|
+| **轻量版（推荐）** | **3.7 MB** 单文件 | Tauri + Rust，免安装双击即用 |
+| 标准版 | 86.6 MB | Electron，兼容性兜底 |
+
+两者的界面、皮肤包目录（`%APPDATA%文件夹换装packs`）完全一致，可共用。
+
 ## 运行
 
 ```bash
 npm install                # 若 electron 二进制未就绪：node node_modules/electron/install.js
 npm start                  # 开发运行
 npm run verify             # 测试套件（33 用例：绘制/ico/ini/真实文件夹幂等）
-npm run dist               # 打包 portable exe（dist/FolderDressup-1.0.0-Windows.exe）
+npm run dist               # 打包 Electron 版
+scripts/build-tauri.bat    # 编译 Tauri 轻量版（需 VS Build Tools + Rust）
 ```
 
 ## 实现原理（Windows 集成）
