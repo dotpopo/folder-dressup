@@ -2,6 +2,18 @@
 
 > ub-mode「Keep a Log」：记录每个动作与原因。新条目加在顶部。
 
+## 2026-10-30（品牌图标 + 三平台发布）
+
+- **品牌图标**：圆角底板 + 白色文件夹 + 全光谱彩虹条 + 星芒；输出 1024 PNG / 7 尺寸 ICO / 16px 预览图，exe 内嵌图标已提取验证。
+- **跨平台后端**：拆为 platform/{windows,macos,linux}.rs。Windows 走 desktop.ini + SHChangeNotify；macOS 走 NSWorkspace.setIcon（objc2）；Linux 写文件夹内 .directory 指向 PNG。
+- **CI 踩坑**（三平台 GitHub Actions）：
+  1. macOS：objc2 需 `ClassType` 才能 `NSImage::alloc()`；选项要 `NSWorkspaceIconCreationOptions::empty()`。
+  2. Linux 打包要求 ASCII productName（deb/AppImage 命名规则）→ CI 构建前改写配置。
+  3. tauri-action 报 "No artifacts were found" 但产物其实已生成 → 改用 softprops/action-gh-release + 统一 ASCII 命名。
+  4. AppImage 的 linuxdeploy panic："couldn't find a square icon" → bundle.icon 必须包含方形 PNG（此前只列了 .ico）。
+- **产物**：Windows setup 1.27MB / MSI 1.79MB；macOS dmg 3.48MB；Linux deb 1.55MB / AppImage 80MB（AppImage 打包了 WebKit 依赖，属该格式常态）。
+- **Release**：https://github.com/dotpopo/folder-dressup/releases/tag/v1.0.0
+
 ## 2026-10-30（换肤提速 + Tauri 迁移）
 
 - **延迟根因**：① apply 先删旧图标再写新图标，Explorer 读到悬空 IconResource → 回退默认图标；② 通知走 PowerShell 冷启动 + Add-Type 编译，每次 1.2–2.5s。
