@@ -4,8 +4,8 @@ use std::fs;
 use std::path::Path;
 
 use objc2::rc::Retained;
-use objc2::runtime::ProtocolObject;
-use objc2_app_kit::{NSImage, NSWorkspace};
+use objc2::ClassType;
+use objc2_app_kit::{NSImage, NSWorkspace, NSWorkspaceIconCreationOptions};
 use objc2_foundation::{NSData, NSString};
 
 use super::{dir_icons, short_hash, write_atomic, Sizes, StateInfo};
@@ -30,7 +30,8 @@ fn set_icon(dir: &Path, png: Option<&[u8]>) -> Result<(), String> {
                 Some(obj)
             }
         };
-        let ok = ws.setIcon_forFile_options(image.as_deref(), &ns_path, 0);
+        let opts = NSWorkspaceIconCreationOptions::empty();
+        let ok = ws.setIcon_forFile_options(image.as_deref(), &ns_path, opts);
         if !ok {
             return Err("系统拒绝了设置图标（请确认该文件夹可写）".into());
         }
