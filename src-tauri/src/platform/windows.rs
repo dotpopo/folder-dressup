@@ -232,6 +232,18 @@ fn referenced_icon(content: &str) -> Option<PathBuf> {
     })
 }
 
+/// desktop.ini：优先临时文件+改名（原子替换），失败再原地写
+fn write_ini(path: &Path, data: &[u8]) -> Result<(), String> {
+    let mut tmp_name = path.file_name().unwrap_or_default().to_os_string();
+    tmp_name.push(".tmp");
+    let tmp = path.with_file_name(tmp_name);
+    if fs::write(&tmp, data).is_ok() && fs::rename(&tmp, path).is_ok() {
+        return Ok(());
+    }
+    let _ = fs::remove_file(&tmp);
+    write_inplace(path, data)
+}
+
 /// 原地覆盖写：改名会"先删后建"，中间存在文件不存在的瞬间，
 /// Explorer 若恰在此时重读就会把文件夹缓存成"无自定义图标"。
 fn write_inplace(path: &Path, data: &[u8]) -> Result<(), String> {
@@ -387,12 +399,13 @@ pub fn apply(dir: &Path, sizes: &Sizes) -> Result<String, String> {
         }
     }
 
-    // 1) 写新图标（被引用的旧图标仍在）
-    write_inplace(&ico_path, &ico)?;
+    // 1) 写新图标：先写临时文件再改名。原地写会让 Explorer 读到半截文件
+    //    （表现为图标先变成默认，再变新图标）。
+    super::write_atomic(&ico_path, &ico)?;
 
     // 2) desktop.ini 指向新图标
     let next = upsert_icon_resource(&existing, &ico_path);
-    write_inplace(&ini_path, &encode_ini(&next))?;
+    write_ini(&ini_path, &encode_ini(&next))?;
 
     // 3) 属性 + 通知
     set_attrs(&ini_path, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);

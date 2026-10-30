@@ -25,7 +25,7 @@ const needle = path.basename(parent);
 const app = spawn(exe, [], {
   detached: true,
   stdio: 'ignore',
-  env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9225', FOLDERSHELL_NOTIFY: mode },
+  env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9361', FOLDERSHELL_NOTIFY: mode },
 });
 app.unref();
 await sleep(6000);
@@ -33,7 +33,7 @@ await sleep(6000);
 let page = null;
 for (let i = 0; i < 20 && !page; i++) {
   try {
-    const list = await (await fetch('http://127.0.0.1:9225/json/list')).json();
+    const list = await (await fetch('http://127.0.0.1:9361/json/list')).json();
     page = list.find((t) => t.type === 'page' && t.webSocketDebuggerUrl);
   } catch {}
   if (!page) await sleep(500);
