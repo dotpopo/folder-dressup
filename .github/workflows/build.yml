@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 发布标签（例如 v1.0.0）
+        required: true
+        default: v1.0.0
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ""
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+          - platform: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Linux 依赖
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: 单元测试
+        working-directory: src-tauri
+        run: cargo test --release
+
+      - name: 构建并上传到 Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: src-tauri
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          releaseName: "文件夹换装 v__VERSION__"
+          releaseBody: |
+            跨平台构建：Windows (NSIS / MSI)、macOS (dmg, universal)、Linux (AppImage / deb)。
+
+            - Windows：图标写入 desktop.ini + 隐藏 .ico
+            - macOS：NSWorkspace 设置文件夹图标
+            - Linux：文件夹内 .directory 指向 PNG
+
+            皮肤包目录：`%APPDATA%\\文件夹换装\\packs`（Windows）/ `~/.local/share/文件夹换装/packs`（Linux）/ `~/Library/Application Support/文件夹换装/packs`（macOS）。
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

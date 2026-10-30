@@ -15,12 +15,19 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"
 sha1 = "0.10"
+
+[target.'cfg(windows)'.dependencies]
 png = "0.17"
 windows-sys = { version = "0.59", features = [
   "Win32_Foundation",
   "Win32_Storage_FileSystem",
   "Win32_UI_Shell",
 ] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.5"
+objc2-foundation = { version = "0.2", features = ["NSData", "NSString"] }
+objc2-app-kit = { version = "0.2", features = ["NSImage", "NSWorkspace"] }
 
 [profile.release]
 opt-level = "s"

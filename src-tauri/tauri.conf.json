@@ -25,7 +25,24 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "icon": ["icons/icon.ico"]
+    "targets": "all",
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "给文件夹换上喜欢的颜色与造型",
+    "windows": {
+      "wix": {
+        "language": [
+          "zh-CN"
+        ]
+      },
+      "nsis": {
+        "languages": [
+          "SimpChinese",
+          "English"
+        ]
+      }
+    }
   }
 }
