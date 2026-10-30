@@ -670,3 +670,15 @@ els.fbNext.addEventListener('click', () => {
   fb.offset += fb.limit;
   loadSubdirs();
 });
+
+/* ---------- 角落显示版本号 ---------- */
+(async () => {
+  const el = document.getElementById('version');
+  if (!el) return;
+  try {
+    const v = api.appVersion ? await api.appVersion() : null;
+    el.textContent = v ? 'v' + v : '';
+  } catch {
+    el.textContent = '';
+  }
+})();

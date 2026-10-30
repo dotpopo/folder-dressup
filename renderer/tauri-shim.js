@@ -32,6 +32,7 @@
     parentDir: (path) => invoke('parent_dir', { path }),
     openInExplorer: (path) => invoke('open_in_explorer', { path }),
     restartExplorer: () => invoke('restart_explorer'),
+    appVersion: () => invoke('app_version'),
     packsList: () => invoke('packs_list'),
     packFiles: (dir) => invoke('pack_files', { dir }),
     packImage: (dir, file) => invoke('pack_image', { dir, file }),

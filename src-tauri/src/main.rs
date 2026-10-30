@@ -453,6 +453,12 @@ fn restart_explorer() -> Result<(), String> {
     Ok(())
 }
 
+/// 返回应用版本号（界面角落显示，便于确认运行的是哪个版本）
+#[tauri::command]
+fn app_version(app: tauri::AppHandle) -> String {
+    app.package_info().version.to_string()
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -477,7 +483,8 @@ fn main() {
             list_subdirs,
             parent_dir,
             open_in_explorer,
-            restart_explorer
+            restart_explorer,
+            app_version
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

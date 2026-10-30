@@ -780,3 +780,16 @@ input::placeholder {
   border-radius: 8px;
   flex: none;
 }
+
+/* 角落版本号：低调但能看见 */
+.version {
+  position: fixed;
+  right: 12px;
+  bottom: 8px;
+  font-size: 11px;
+  color: #b9bdc6;
+  letter-spacing: 0.3px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 5;
+}
