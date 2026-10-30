@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createCanvas } = require('@napi-rs/canvas');
-const { drawFolderIcon, normalizeSpec } = require('../lib/draw-folder.js');
+const { drawFolderIcon, normalizeSpec } = require('../renderer/draw-folder.js');
 const { buildIco, parsePngSize } = require('../lib/ico.js');
 const { renderSizes } = require('../lib/render-icon.js');
 const {
@@ -85,7 +85,7 @@ await section('main.js 静态自检（回归：fsp 未定义导致皮肤包全�
 
 await section('draw-folder 双环境加载（回归：浏览器无 module）', async () => {
   const vm = require('node:vm');
-  const code = fs.readFileSync(path.join(__dirname, '..', 'lib', 'draw-folder.js'), 'utf8');
+  const code = fs.readFileSync(path.join(__dirname, '..', 'renderer', 'draw-folder.js'), 'utf8');
   const browserCtx = vm.createContext({});
   vm.runInContext(code, browserCtx);
   check('无 module 的环境挂载 FolderArt', vm.runInContext('typeof FolderArt === "object" && typeof FolderArt.drawFolderIcon === "function"', browserCtx));

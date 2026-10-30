@@ -421,13 +421,8 @@ function setupDrag() {
     state.dragDepth = Math.max(0, state.dragDepth - 1);
     if (state.dragDepth === 0) showDrop(false);
   });
-  window.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    state.dragDepth = 0;
+  const handleDroppedPath = async (p) => {
     showDrop(false);
-    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if (!file) return;
-    const p = api.pathForFile(file);
     if (!p) {
       toast('无法读取拖入的路径', 'error');
       return;
@@ -436,7 +431,7 @@ function setupDrag() {
       const res = await api.ingestDrop(p);
       if (res.type === 'folder') {
         setFolder(res.path);
-        toast(`已选择文件夹「${res.path.split(/[\\/]/).pop()}」`);
+        toast('已选择文件夹：' + res.path.split(/[\\/]/).pop());
       } else {
         state.spec = { hue: state.spec.hue, text: '', image: res.dataUrl };
         state.selectedPreset = null;
@@ -448,6 +443,17 @@ function setupDrag() {
     } catch (err) {
       toast(errorMessage(err), 'error');
     }
+  };
+
+  window.addEventListener('fd-drop-path', (e) => handleDroppedPath(e.detail));
+
+  window.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    state.dragDepth = 0;
+    showDrop(false);
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    await handleDroppedPath(api.pathForFile(file));
   });
 }
 

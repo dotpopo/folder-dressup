@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const { drawFolderIcon } = require('../lib/draw-folder.js');
+const { drawFolderIcon } = require('../renderer/draw-folder.js');
 const { buildIco } = require('../lib/ico.js');
 const { renderSizes, SIZES } = require('../lib/render-icon.js');
 

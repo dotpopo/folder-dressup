@@ -10,6 +10,7 @@ const {
   readFolderCustomization,
   ingestDroppedPath,
 } = require('./lib/apply');
+const { setBinRoot, ensureHelper } = require('./lib/shell-helper');
 
 const ALLOWED_SIZES = new Set([16, 24, 32, 48, 64, 128, 256]);
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif']);
@@ -192,7 +193,12 @@ ipcMain.handle('add-pack-folder', async () => {
   return { name: path.basename(dir), dir, count: files.length };
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  // 原生 shell 小工具放到 userData，并在启动时预热（首次编译约 0.8s）
+  setBinRoot(path.join(app.getPath('userData'), 'bin'));
+  ensureHelper().catch(() => {});
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

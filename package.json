@@ -43,6 +43,11 @@
     },
     "portable": {
       "artifactName": "FolderDressup-1.0.0-Windows.exe"
-    }
+    },
+    "electronLanguages": [
+      "zh-CN",
+      "en-US"
+    ],
+    "compression": "maximum"
   }
 }
