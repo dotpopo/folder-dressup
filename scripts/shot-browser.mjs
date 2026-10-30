@@ -10,7 +10,7 @@ const root = path.join(os.tmpdir(), 'fd-browse');
 const app = spawn(exe, [], {
   detached: true,
   stdio: 'ignore',
-  env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9229' },
+  env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9345' },
 });
 app.unref();
 await sleep(6500);
@@ -18,7 +18,7 @@ await sleep(6500);
 let page = null;
 for (let i = 0; i < 20 && !page; i++) {
   try {
-    const list = await (await fetch('http://127.0.0.1:9229/json/list')).json();
+    const list = await (await fetch('http://127.0.0.1:9345/json/list')).json();
     page = list.find((t) => t.type === 'page' && t.webSocketDebuggerUrl);
   } catch {}
   if (!page) await sleep(500);
@@ -36,7 +36,7 @@ const ev = (expr) => new Promise((res) => {
   ws.send(JSON.stringify({ id: i, method: 'Runtime.evaluate', params: { expression: expr, awaitPromise: true, returnByValue: true } }));
 });
 
-await ev('setFolder(' + JSON.stringify(root) + ', { openBrowser: true })');
+await ev('setFolder(' + JSON.stringify(root) + ')');
 
 await sleep(1600);
 ws.close();

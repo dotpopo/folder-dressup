@@ -7,7 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
-use platform::{assert_folder, imp, Sizes};
+use platform::{assert_folder, dir_icons, imp, Sizes};
 
 const ALLOWED_SIZES: [u32; 7] = [16, 24, 32, 48, 64, 128, 256];
 const IMAGE_EXTS: [&str; 7] = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "avif"];
@@ -299,6 +299,8 @@ struct DirEntryInfo {
     name: String,
     path: String,
     customized: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    icon: Option<String>,
 }
 
 #[derive(serde::Serialize)]
@@ -327,10 +329,22 @@ fn list_subdirs(parent: String, offset: usize, limit: usize, query: String) -> R
         .take(limit.min(200))
         .map(|(name, path)| {
             let customized = imp::state(&path).map(|s| s.customized).unwrap_or(false);
+            // 已换装的目录直接回传真实图标文件，前端原样渲染
+            let icon = if customized {
+                dir_icons(&path)
+                    .into_iter()
+                    .next()
+                    .and_then(|p| fs::read(p).ok())
+                    .filter(|b| b.len() < 400_000)
+                    .map(|b| format!("data:image/x-icon;base64,{}", B64.encode(b)))
+            } else {
+                None
+            };
             DirEntryInfo {
                 name,
                 path: path.display().to_string(),
                 customized,
+                icon,
             }
         })
         .collect();

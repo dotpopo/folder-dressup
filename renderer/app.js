@@ -141,21 +141,19 @@ function syncControls() {
   els.text.value = state.spec.text;
 }
 
-function setFolder(p, opts) {
+function selectFolder(p) {
   state.folder = p;
-  els.folder.value = p;
-  els.folderLabel.textContent = p.split(/[\\/]/).filter(Boolean).pop() || p;
+  els.folderLabel.textContent = p.split(/[\/]/).filter(Boolean).pop() || p;
   els.apply.disabled = false;
   els.refresh.disabled = false;
   refreshFolderState();
-  if (opts && opts.openBrowser) {
-    switchTab('folders');
-    openFolders(p).then(() => {
-      if (fb.total > 0) toast('共 ' + fb.total + ' 个子文件夹，点一下即可换肤，双击进入');
-      else toast('这个目录下没有子文件夹，可直接点「应用」');
-    });
-  }
 }
+
+function setFolder(p) {
+  selectFolder(p);
+  setBrowseRoot(p);
+}
+
 
 async function refreshFolderState() {
   try {
@@ -176,7 +174,7 @@ async function refreshFolderState() {
 
 async function browseFolder() {
   const p = await api.pickFolder();
-  if (p) setFolder(p, { openBrowser: true });
+  if (p) setFolder(p);
 }
 
 async function useImportedImage() {
@@ -440,7 +438,7 @@ function setupDrag() {
     try {
       const res = await api.ingestDrop(p);
       if (res.type === 'folder') {
-        setFolder(res.path, { openBrowser: true });
+        setFolder(res.path);
         toast('已选择文件夹：' + res.path.split(/[\\/]/).pop());
       } else {
         state.spec = { hue: state.spec.hue, text: '', image: res.dataUrl };
@@ -531,7 +529,7 @@ els.addPack.addEventListener('click', async () => {
   }
 });
 els.folder.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && els.folder.value.trim()) setFolder(els.folder.value.trim(), { openBrowser: true });
+  if (e.key === 'Enter' && els.folder.value.trim()) setFolder(els.folder.value.trim());
 });
 
 setupDrag();
@@ -539,45 +537,34 @@ loadPackCats().then(buildGallery);
 syncControls();
 schedulePreview();
 
-/* ---------- 文件夹浏览（双击进入 / ← 返回上级） ---------- */
+
+/* ---------- 子文件夹浏览（与皮肤同屏，无需切换） ---------- */
 
 Object.assign(els, {
-  fbUp: $('fb-up'),
-  fbPath: $('fb-path'),
-  fbPick: $('fb-pick'),
+  goUp: $('go-up'),
   fbQ: $('fb-q'),
   fbTotal: $('fb-total'),
   fbGrid: $('fb-grid'),
   fbPrev: $('fb-prev'),
   fbPage: $('fb-page'),
   fbNext: $('fb-next'),
-  skinsView: $('skins-view'),
-  foldersView: $('folders-view'),
 });
 
-const fb = { root: '', offset: 0, limit: 48, query: '', total: 0 };
+const fb = { root: '', offset: 0, limit: 24, query: '', total: 0 };
 
-function switchTab(name) {
-  for (const b of document.querySelectorAll('.rtab')) b.classList.toggle('active', b.dataset.tab === name);
-  els.skinsView.hidden = name !== 'skins';
-  els.foldersView.hidden = name !== 'folders';
-  if (name === 'folders' && !fb.root) {
-    if (state.folder) openFolders(state.folder);
-    else toast('先选择一个目录，或点「选择…」');
-  } else if (name === 'folders' && state.folder && fb.root !== state.folder) {
-    loadSubdirs();
-  }
+function parentOf(p) {
+  const s = String(p || '').replace(/[\\/]+$/, '');
+  const i = Math.max(s.lastIndexOf('\\'), s.lastIndexOf('/'));
+  return i > 0 ? s.slice(0, i) : '';
 }
 
-async function openFolders(root) {
-  if (!root) return;
+/** 切换正在浏览的目录（路径行显示的就是它） */
+async function setBrowseRoot(root) {
   fb.root = root;
   fb.offset = 0;
   fb.query = '';
-  els.fbQ.value = '';
-  els.fbPath.textContent = root;
-  els.fbPath.title = root;
-  els.toast.hidden = true;
+  if (els.fbQ) els.fbQ.value = '';
+  els.folder.value = root;
   await loadSubdirs();
 }
 
@@ -601,48 +588,53 @@ async function loadSubdirs() {
   for (const item of page.items) {
     const el = document.createElement('div');
     el.className = 'fb-item' + (item.path === state.folder ? ' selected' : '');
-    el.title = item.path;
-    const cv = document.createElement('canvas');
-    cv.width = 160;
-    cv.height = 160;
-    el.appendChild(cv);
-    FolderArt.drawFolderIcon(cv.getContext('2d'), 160, { hue: 210, text: '', image: null }).catch(() => {});
+    el.title = item.path + '\n单击选中 · 双击进入';
+    if (item.icon) {
+      const img = document.createElement('img');
+      img.src = item.icon;
+      img.alt = item.name;
+      el.appendChild(img);
+    } else {
+      const cv = document.createElement('canvas');
+      cv.width = 120;
+      cv.height = 120;
+      el.appendChild(cv);
+      FolderArt.drawFolderIcon(cv.getContext('2d'), 120, { hue: 210, text: '', image: null }).catch(() => {});
+    }
     const nm = document.createElement('span');
     nm.className = 'fb-name';
     nm.textContent = item.name;
     el.appendChild(nm);
-    if (item.customized) {
-      const badge = document.createElement('span');
-      badge.className = 'fb-badge';
-      badge.textContent = '已换装';
-      el.appendChild(badge);
-    }
     el.addEventListener('click', () => {
-      setFolder(item.path);
+      selectFolder(item.path);
       for (const c of els.fbGrid.children) c.classList.remove('selected');
       el.classList.add('selected');
     });
-    el.addEventListener('dblclick', () => openFolders(item.path));
+    el.addEventListener('dblclick', () => {
+      selectFolder(item.path);
+      setBrowseRoot(item.path);
+    });
     els.fbGrid.appendChild(el);
   }
   const pages = Math.max(1, Math.ceil(fb.total / fb.limit));
   const cur = Math.floor(fb.offset / fb.limit) + 1;
-  els.fbTotal.textContent = `${fb.total} 个子文件夹`;
+  els.fbTotal.textContent = fb.total ? `${fb.total} 个` : '';
   els.fbPage.textContent = `${cur} / ${pages}`;
   els.fbPrev.disabled = fb.offset === 0;
   els.fbNext.disabled = fb.offset + fb.limit >= fb.total;
 }
 
-els.fbUp.addEventListener('click', async () => {
-  if (!fb.root) return;
-  const p = api.parentDir ? await api.parentDir(fb.root) : null;
-  if (p) openFolders(p);
-  else toast('已经是顶层目录');
-});
-
-els.fbPick.addEventListener('click', async () => {
-  const p = await api.pickFolder();
-  if (p) openFolders(p);
+els.goUp.addEventListener('click', () => {
+  const up = parentOf(fb.root || state.folder);
+  if (up) {
+    setBrowseRoot(up);
+    const sel = fb.root;
+    if (state.folder) {
+      for (const c of els.fbGrid.children) c.classList.remove('selected');
+    }
+  } else {
+    toast('已经是顶层目录');
+  }
 });
 
 els.fbQ.addEventListener('input', () => {
@@ -660,12 +652,3 @@ els.fbNext.addEventListener('click', () => {
   fb.offset += fb.limit;
   loadSubdirs();
 });
-
-for (const b of document.querySelectorAll('.rtab')) {
-  b.addEventListener('click', () => switchTab(b.dataset.tab));
-}
-
-if (!api.listSubdirs) {
-  const t = document.querySelector('.rtab[data-tab="folders"]');
-  if (t) t.hidden = true;
-}

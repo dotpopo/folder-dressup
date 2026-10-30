@@ -31,11 +31,11 @@
       <div class="folder-name" id="folder-label">尚未选择文件夹</div>
 
       <div class="path-row">
+        <button id="go-up" class="btn ghost icon-btn" title="返回上一级目录">📁</button>
         <div class="path-input" id="path-shell">
-          <span class="path-ico">📂</span>
-          <input id="folder" placeholder="选择文件夹，或直接拖进来" spellcheck="false" />
+          <input id="folder" placeholder="父级目录（点左侧图标可返回上一级）" spellcheck="false" />
         </div>
-        <button id="browse" class="btn ghost icon-btn" title="浏览文件夹">＋</button>
+        <button id="browse" class="btn ghost icon-btn" title="选择目录">＋</button>
       </div>
 
       <div class="slider-row">
@@ -60,12 +60,21 @@
     </section>
 
     <section class="panel right">
-      <div class="right-tabs">
-        <button class="rtab active" data-tab="skins">皮肤</button>
-        <button class="rtab" data-tab="folders">文件夹</button>
+      <div class="rp-folders">
+        <div class="rp-head">
+          <span class="rp-title">子文件夹</span>
+          <span id="fb-total" class="count"></span>
+          <input id="fb-q" placeholder="搜索…" spellcheck="false" />
+        </div>
+        <div id="fb-grid" class="fb-grid"></div>
+        <div class="fb-foot">
+          <button id="fb-prev" class="btn ghost">上一页</button>
+          <span id="fb-page" class="count"></span>
+          <button id="fb-next" class="btn ghost">下一页</button>
+        </div>
       </div>
 
-      <div id="skins-view" class="view">
+      <div class="rp-skins">
         <div class="cat-row" id="cats"></div>
         <div class="grid" id="grid"></div>
         <div class="gallery-foot">
@@ -75,24 +84,6 @@
             <button id="import" class="btn ghost">导入图片…</button>
           </div>
           <span id="count" class="count"></span>
-        </div>
-      </div>
-
-      <div id="folders-view" class="view" hidden>
-        <div class="fb-bar">
-          <button id="fb-up" class="btn ghost icon-btn" title="上一级">←</button>
-          <div class="fb-path" id="fb-path" title="">尚未选择目录</div>
-          <button id="fb-pick" class="btn ghost">选择…</button>
-        </div>
-        <div class="fb-tools">
-          <input id="fb-q" placeholder="搜索当前目录的子文件夹…" spellcheck="false" />
-          <span id="fb-total" class="count"></span>
-        </div>
-        <div class="grid" id="fb-grid"></div>
-        <div class="fb-foot">
-          <button id="fb-prev" class="btn ghost">上一页</button>
-          <span id="fb-page" class="count"></span>
-          <button id="fb-next" class="btn ghost">下一页</button>
         </div>
       </div>
     </section>

@@ -693,3 +693,80 @@ input::placeholder {
   font-size: 13px;
   padding: 40px 0;
 }
+
+/* ---------- 右栏：子文件夹 + 皮肤 同时可见 ---------- */
+
+.rp-folders {
+  flex: 0 0 auto;
+  max-height: 46%;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rp-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  margin-bottom: 8px;
+}
+
+.rp-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rp-head input {
+  flex: 1;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  background: #fff;
+  min-width: 0;
+}
+
+.rp-head input:focus { border-color: var(--accent); }
+
+.fb-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  align-content: start;
+  padding-right: 4px;
+  min-height: 0;
+}
+
+.fb-grid::-webkit-scrollbar { width: 8px; }
+.fb-grid::-webkit-scrollbar-thumb { background: #d9dbe0; border-radius: 999px; }
+
+.fb-item {
+  padding: 8px 6px 6px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.fb-item canvas,
+.fb-item img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.fb-item .fb-name { font-size: 11px; }
+
+.rp-skins {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
